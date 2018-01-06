@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="favicon.ico">
+
+    <title>Obsługa Stacji Benzynowej</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="theme.css" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <script src="assets/js/ie-emulation-modes-warning.js"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Obsługa Stacji Panel Klienta</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#glowna">Strona główna</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Zamówienia<span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="#">Status Zamówień</a></li>
+                <li><a href="#">Zamów</a></li>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Konto<span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="#">Twoje Dane</a></li>
+                <li><a href="#">Twoje Stacje</a></li>
+              </ul>
+            </li>
+            <li><a href="#pomoc">Pomoc</a></li>
+
+          </ul>
+          
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container theme-showcase" role="main">
+
+      <div class="page-header">
+        <h1>Historia Zamówien</h1>
+      </div>
+      <div class="row">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>ID Klienta</th>
+                <th>Obiekt</th>
+                <th>Data Zamowienia</th>
+                <th>Numer Faktury</th>
+                <th>Status Platnosci</th>
+                <th>Status Zamowienia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>#</th>
+                <th>ZAM1234</th>
+                <th>Stacja Paliw Chorzów</th>
+                <th>08:00:11 02/02/2017</th>
+                <th>FV/17/02/2017</th>
+                <th>
+                        <span class="label label-success">Opłacone</span>
+                </th>
+                <th>
+                        <span class="label label-success">Zrealizowane</span>
+                </th>   
+              </tr>
+              <tr>
+                <th>#</th>
+                <th>ID Klienta</th>
+                <th>Stacja Paliw Chorzów</th>
+                <th>11:00:11 04/02/2017</th>
+                <th>FV/19/02/2017</th>
+                <th>
+                    <a href="#payments" role="button" data-toggle="modal">    
+                        <span class="label label-info">Opłac</span>
+                        <span class="glyphicon glyphicon-piggy-bank" aria-hidden="true"></span>
+                    </a>
+                </th>
+                <th>
+                        <span class="label label-warning">Oczekiwanie na płatnośc</span>
+                </th>    
+            </tr>
+              <tr>
+                <th>#</th>
+                <th>ID Klienta</th>
+                <th>Stacja Paliw Katowice</th>
+                <th>09:00:11 06/02/2017</th>
+                <th>FV/21/02/2017</th>
+                <th>
+                        <span class="label label-danger">Nieoplacone w Terminie</span>
+                </th>
+                <th>
+                        <span class="label label-danger">Realizacja Wstrzymana</span>
+                </th>
+              </tr>
+            </tbody>
+          </table>
+      </div>
+
+    </div> <!-- /container -->
+
+    <!-- /Modal Platnosci -->
+    <div id="payments" class="modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Oplac</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <p>Czy zatwierdzasz platnośc</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary">Tak Zapłac</button>
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Anuluj</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        <!-- /Modal Platnosci -->
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="assets/js/docs.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="assets/js/ie10-viewport-bug-workaround.js"></script>
+  </body>
+</html>
