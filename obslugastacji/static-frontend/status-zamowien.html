@@ -21,7 +21,11 @@
     <!-- Custom styles for this template -->
     <link href="theme.css" rel="stylesheet">
 
-    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+      <!-- TreeView Styles -->
+      <link href="css/treeview.css" rel="stylesheet">
+
+
+      <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
     <!--[if lt IE 9]><script src="assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
     <script src="assets/js/ie-emulation-modes-warning.js"></script>
 
@@ -73,6 +77,22 @@
       <div class="panel panel-default">
           <div class="panel-body">
               <button href="#neworder" type="button" class="btn btn-lg btn-success" data-toggle="modal">Utwórz nowe zamówienie</button>
+              <form class="form-inline">
+          <div class="form-group">
+            <select class="form-control">
+              <option value="" selected="selected">Select a State</option>
+              <option value="AL">Alabama</option>
+              <option value="WY">Wyoming</option>
+            </select>
+          </div>
+                <div class="form-group">
+                  <select class="form-control">
+                    <option value="" selected="selected">Select a State</option>
+                    <option value="AL">Alabama</option>
+                    <option value="WY">Wyoming</option>
+                  </select>
+                </div>
+        </form>
           </div>
         </div>
       <div class="row">
@@ -142,13 +162,13 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title">Oplac</h5>
+                  <h5 class="modal-title">Opłać</h5>
                   <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
                 <div class="modal-body">
-                  <p>Czy zatwierdzasz platnośc</p>
+                  <p>Czy zatwierdzasz platność</p>
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-primary">Tak Zapłac</button>
@@ -157,9 +177,9 @@
               </div>
             </div>
           </div>
-        <!-- /Modal Platnosci -->
+    <!-- /Modal Platnosci -->
     
-          <!-- /Modal Nowego Zamowienia -->
+        <!-- /Modal Nowego Zamowienia -->
     <div id="neworder" class="modal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
           <div class="modal-content">
@@ -170,7 +190,104 @@
               </button>
             </div>
             <div class="modal-body">
-              <p>Wybierz Produkty aby utworzyc zamówienie.</p>
+                <form class="form-horizontal">
+                    <fieldset>
+
+                        <!-- Form Name -->
+                        <legend>Formularz zamówienia</legend>
+
+                        <!-- Text input-->
+                        <div class="form-group">
+                            <label class="col-md-4 control-label" for="textinput">Numer Własny</label>
+                            <div class="col-md-4">
+                                <input id="orderform_id" name="textinput" type="text" placeholder="placeholder" class="form-control input-md">
+                            </div>
+                        </div>
+
+                        <!-- Text input-->
+                        <div class="form-group">
+                            <label class="col-md-4 control-label" for="textinput">Nazwa Własna</label>
+                            <div class="col-md-4">
+                                <input id="textinput" name="textinput" type="text" placeholder="placeholder" class="form-control input-md">
+                            </div>
+                        </div>
+
+                        <!-- Select Basic -->
+                        <div class="form-group">
+                            <label class="col-md-4 control-label" for="selectbasic">Adres Dostawy</label>
+                            <div class="col-md-4">
+                                <select id="selectbasic" name="selectbasic" class="form-control">
+                                    <option value="1">Katowice Orlen</option>
+                                    <option value="2">Trzebinia Orlen</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="container" style="margin-top:30px;">
+                            <div class="row">
+                                    <ul id="tree2">
+                                        <li><a href="#">Katalog</a>
+                                                    <ul>
+                                                        <li>Paliwa
+                                                            <ul>
+                                                                <li>Bezołowiowa 95 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
+                                                                <li>Bezołowiowa 95 Premium <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
+                                                                <li>Bezołowiowa 98 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
+                                                                <li>Bezołowiowa 98 Premium <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
+                                                            </ul>
+                                                        </li>
+                                                        <li>Eksploatacja
+                                                            <ul>
+                                                                <li>Olej 1 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
+                                                                <li>Olej 2 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
+                                                                <li>Olej 3 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
+                                                                <li>Olej 4 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
+                                                            </ul>
+                                                        </li>
+                                                    </ul>
+                                        </li>
+                                    </ul>
+                                <p>
+
+                                </p>
+                            </div>
+                        </div>
+                        <div class="row">
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th>LP</th>
+                                        <th>Nazwa</th>
+                                        <th>Cena</th>
+                                        <th>Ilość</th>
+                                        <th>Suma</th>
+                                        <th>Akcja</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <th>1</th>
+                                        <th>Bezołowiowa 95</th>
+                                        <th>4.37</th>
+                                        <th>1200.00</th>
+                                        <th>5244.00</th>
+                                        <th><button type="button" class="btn btn-xs btn-danger">[ usuń ]</button></th>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <th>Bezołowiowa 98</th>
+                                        <th>4.77</th>
+                                        <th>1200.00</th>
+                                        <th>5724.00</th>
+                                        <th><button type="button" class="btn btn-xs btn-danger">[ usuń ]</button></th>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                        </div>
+
+                    </fieldset>
+                </form>
+
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-primary">Zatwierdź</button>
@@ -179,7 +296,7 @@
           </div>
         </div>
       </div>
-    <!-- /Modal Nowego Zamowienia -->
+        <!-- /Modal Nowego Zamowienia -->
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
@@ -188,6 +305,15 @@
     <script>window.jQuery || document.write('<script src="assets/js/vendor/jquery.min.js"><\/script>')</script>
     <script src="js/bootstrap.min.js"></script>
     <script src="assets/js/docs.min.js"></script>
+    <script src="js/treeview.js"></script>
+    <script>
+        $('#tree1').treed();
+
+        $('#tree2').treed({openedClass:'glyphicon-folder-open', closedClass:'glyphicon-folder-close'});
+
+        $('#tree3').treed({openedClass:'glyphicon-chevron-right', closedClass:'glyphicon-chevron-down'});
+
+    </script>
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <script src="assets/js/ie10-viewport-bug-workaround.js"></script>
   </body>
