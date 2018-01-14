@@ -1,2 +1,0 @@
-# obslugastacji
-# First commit test

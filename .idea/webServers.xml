@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="afc526dd-471e-4103-982a-cd3884ec6f03" name="obslugastacji" url="https://obslugastacji.ddns.net">
-        <fileTransfer host="obslugastacji.ddns.net" port="22" privateKey="$USER_HOME$/.ssh/id_rsa" rootFolder="/var/www/html" accessType="SFTP" keyPair="true">
+        <fileTransfer host="obslugastacji.ddns.net" port="22" privateKey="$USER_HOME$/.ssh/id_rsa" rootFolder="/var/www" accessType="SFTP" keyPair="true">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" />
           </advancedOptions>
