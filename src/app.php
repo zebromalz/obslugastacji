@@ -32,7 +32,7 @@ $errorHandler->registerExceptionHandler();
 $errorHandler->registerErrorHandler();
 $errorHandler->registerShutdownFunction();
 
-// ROZSZERZENIE STYLI
+
 $app['twig'] = $app->extend('twig', function ($twig, $app) {
     // add custom globals, filters, tags, ...
 

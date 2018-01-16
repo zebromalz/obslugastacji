@@ -14,6 +14,12 @@ $app->get('/', function () use ($app) {
 ->bind('homepage')
 ;
 
+$app->get('/zamowienia', function () use ($app) {
+    return $app['twig']->render('zamowienia.html.twig', array());
+})
+    ->bind('zamowienia')
+;
+
 $app->error(function (\Exception $e, Request $request, $code) use ($app) {
     if ($app['debug']) {
         return;
