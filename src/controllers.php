@@ -50,6 +50,17 @@ $app->get('/kontostacje', function () use ($app) {
     ->bind('kontostacje')
 ;
 
+$app->get('/user/{id}', function ($id) use ($app) {
+    $sql = "SELECT * FROM tbl_users WHERE c_id = ?";
+    $post = $app['dbs']['mysql_read']->fetchAssoc($sql, array((int) $id));
+
+    //$sql = "UPDATE posts SET value = ? WHERE id = ?";
+    //$app['dbs']['mysql_write']->executeUpdate($sql, array('newValue', (int) $id));
+
+    return  "<h1>{$post['c_name']}</h1>".
+        "<p>{$post['c_phone']}</p>";
+});
+
 $app->error(function (\Exception $e, Request $request, $code) use ($app) {
     if ($app['debug']) {
         return;
