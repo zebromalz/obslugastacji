@@ -1,3 +1,6 @@
+{% set navigation_bar = [['index', 'Home Page'], ['blog', 'Blog'], ['archive', 'Archive']] %}
+{% set active_page = active_page|default('index') %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +11,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <link rel="icon" href="asset('favicon.ico') }}">
-        <title>{% block title '' %} - My Silex Application</title>
+        <title>{% block title '' %}</title>
 
         <link href="{{ asset('css/main.css') }}" rel="stylesheet" type="text/css" />
     <!-- Bootstrap core CSS -->
@@ -48,22 +51,25 @@
                 </button>
                 <a class="navbar-brand" href="#">Obsługa Stacji Panel Klienta</a>
             </div>
+            {% block menu %}
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li><a href="#glowna">Strona główna</a></li>
-                    <li class="active"><a href="#zamowienia">Zamówienia</a></li>
+                    <li class="active"><a href="{{ app.url_generator.generate('zamowienia')}}">Zamówienia</a></li>
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Konto<span class="caret"></span></a>
+                        <a href="{{ app.url_generator.generate('konto')}}" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Konto<span class="caret"></span></a>
                         <ul class="dropdown-menu">
-                            <li><a href="#">Twoje Dane</a></li>
-                            <li><a href="#">Twoje Stacje</a></li>
+                            <li><a href="{{ app.url_generator.generate('kontodane')}}">Twoje Dane</a></li>
+                            <li><a href="{{ app.url_generator.generate('kontostacje')}}">Twoje Stacje</a></li>
                         </ul>
                     </li>
-                    <li><a href="#pomoc">Pomoc</a></li>
+                    <li><a href="{{ app.url_generator.generate('pomoc')}}">Pomoc</a></li>
+                    <li><a href="{{ app.url_generator.generate('logowanie')}}">Logowanie</a></li>
 
                 </ul>
 
             </div><!--/.nav-collapse -->
+            {% endblock %}
         </div>
     </nav>
 

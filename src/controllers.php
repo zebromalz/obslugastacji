@@ -11,13 +11,43 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 $app->get('/', function () use ($app) {
     return $app['twig']->render('index.html.twig', array());
 })
-->bind('homepage')
+->bind('glowna')
 ;
 
 $app->get('/zamowienia', function () use ($app) {
     return $app['twig']->render('zamowienia.html.twig', array());
 })
     ->bind('zamowienia')
+;
+
+$app->get('/pomoc', function () use ($app) {
+    return $app['twig']->render('pomoc.html.twig', array());
+})
+    ->bind('pomoc')
+;
+
+$app->get('/logowanie', function () use ($app) {
+    return $app['twig']->render('logowanie.html.twig', array());
+})
+    ->bind('logowanie')
+;
+
+$app->get('/konto', function () use ($app) {
+    return $app['twig']->render('konto.html.twig', array());
+})
+    ->bind('konto')
+;
+
+$app->get('/kontodane', function () use ($app) {
+    return $app['twig']->render('kontodane.html.twig', array());
+})
+    ->bind('kontodane')
+;
+
+$app->get('/kontostacje', function () use ($app) {
+    return $app['twig']->render('kontostacje.html.twig', array());
+})
+    ->bind('kontostacje')
 ;
 
 $app->error(function (\Exception $e, Request $request, $code) use ($app) {
