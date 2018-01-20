@@ -14,8 +14,31 @@ $app->get('/', function () use ($app) {
 ->bind('glowna')
 ;
 
-$app->get('/zamowienia', function () use ($app) {
-    return $app['twig']->render('zamowienia.html.twig', array());
+$app->get('/zamowienia/{rows}/{customer}', function ($rows,$customer_id) use ($app) {
+    $sql_zamowienia = "select 
+      tbl_orders.o_id , 
+      tbl_orders.o_name, 
+      tbl_orders.o_datetime ,
+      (SELECT tbl_customer_address.a_name from tbl_customer_address where tbl_customer_address.a_id = o_c_id_shipto ) as  o_shipto,
+      tbl_orders.o_c_id_shipto,
+      (SELECT CONCAT(tbl_customers.c_name, \" \" ,tbl_customers.c_surname) from tbl_customers where tbl_customers.c_id = tbl_orders.o_c_id) as o_customer,
+      tbl_orders.o_c_id,
+      tbl_orders.o_f_id
+ 
+      from tbl_orders where tbl_orders.o_c_id = ? LIMIT ?;
+      ";
+
+
+
+    if ( (!is_null($rows)) and $rows < 0){
+        $rows = 10;
+    }else{
+       // assert("Zamówienia : Brak zmiennej ilosci wierszy lub zmienna posiada wartość ujemną");
+    }
+
+    $results = $app['dbs']['mysql_read']->fetchAll($sql_zamowienia, array ((int) $rows , (int) $customer_id)  );
+
+    return $app['twig']->render('zamowienia.html.twig', array('orders' => $results));
 })
     ->bind('zamowienia')
 ;
@@ -51,7 +74,7 @@ $app->get('/kontostacje', function () use ($app) {
 ;
 
 $app->get('/user/{id}', function ($id) use ($app) {
-    $sql = "SELECT * FROM tbl_users WHERE c_id = ?";
+    $sql = "SELECT * FROM tbl_customers WHERE c_id = ?";
     $post = $app['dbs']['mysql_read']->fetchAssoc($sql, array((int) $id));
 
     //$sql = "UPDATE posts SET value = ? WHERE id = ?";

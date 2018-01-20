@@ -31,58 +31,33 @@
             <table class="table table-striped">
                 <thead>
                 <tr>
-                    <th>#</th>
-                    <th>ID Klienta</th>
-                    <th>Obiekt</th>
-                    <th>Data Zamowienia</th>
+                    <th>ID Zamówienia</th>
+                    <th>Numer Własny</th>
                     <th>Numer Faktury</th>
+                    <th>Adres Dostawy</th>
                     <th>Status Platnosci</th>
                     <th>Status Zamowienia</th>
+                    <th>Zamówiono</th>
                 </tr>
                 </thead>
                 <tbody>
+
+                {% for i in orders %}
                 <tr>
-                    <th>#</th>
-                    <th>ZAM1234</th>
-                    <th>Stacja Paliw Chorzów</th>
-                    <th>08:00:11 02/02/2017</th>
-                    <th>FV/17/02/2017</th>
+                    <th>{{ i.o_id }}</th>
+                    <th>{{ i.o_name }}</th>
+                    <th>FV/{{ i.o_f_id }}/{{ i.o_datetime| date("Y") }}</th>
+                    <th>{{ i.o_shipto }}</th>
                     <th>
                         <span class="label label-success">Opłacone</span>
                     </th>
                     <th>
                         <span class="label label-success">Zrealizowane</span>
                     </th>
+                    <th>{{ i.o_datetime }}</th>
                 </tr>
-                <tr>
-                    <th>#</th>
-                    <th>ID Klienta</th>
-                    <th>Stacja Paliw Chorzów</th>
-                    <th>11:00:11 04/02/2017</th>
-                    <th>FV/19/02/2017</th>
-                    <th>
-                        <a href="#payments" role="button" data-toggle="modal">
-                            <span class="label label-info">Opłac</span>
-                            <span class="glyphicon glyphicon-piggy-bank" aria-hidden="true"></span>
-                        </a>
-                    </th>
-                    <th>
-                        <span class="label label-warning">Oczekiwanie na płatnośc</span>
-                    </th>
-                </tr>
-                <tr>
-                    <th>#</th>
-                    <th>ID Klienta</th>
-                    <th>Stacja Paliw Katowice</th>
-                    <th>09:00:11 06/02/2017</th>
-                    <th>FV/21/02/2017</th>
-                    <th>
-                        <span class="label label-danger">Nieoplacone w Terminie</span>
-                    </th>
-                    <th>
-                        <span class="label label-danger">Realizacja Wstrzymana</span>
-                    </th>
-                </tr>
+                {% endfor %}
+
                 </tbody>
             </table>
         </div>
