@@ -14,7 +14,7 @@ $app->get('/', function () use ($app) {
 ->bind('glowna')
 ;
 
-$app->get('/zamowienia/{rows}/{customer}', function ($rows,$customer_id) use ($app) {
+$app->get('/zamowienia/{rows}', function ( $rows) use ($app) {
     $sql_zamowienia = "select 
       tbl_orders.o_id , 
       tbl_orders.o_name, 
@@ -25,20 +25,28 @@ $app->get('/zamowienia/{rows}/{customer}', function ($rows,$customer_id) use ($a
       tbl_orders.o_c_id,
       tbl_orders.o_f_id
  
-      from tbl_orders where tbl_orders.o_c_id = ? LIMIT ?;
+      from tbl_orders where tbl_orders.o_c_id = :customer_id LIMIT :rows;
       ";
 
+    $customer_id = 1; //dodac wczytanie id klienta ktory jest zalogowany.
 
+    $q = $app['dbs']['mysql_read']->prepare($sql_zamowienia);
+    $q->bindValue(':customer_id',$customer_id,PDO::PARAM_INT);
+    $q->bindValue(':rows',(int) $rows,PDO::PARAM_INT);
+    $q->execute();
 
-    if ( (!is_null($rows)) and $rows < 0){
-        $rows = 10;
-    }else{
-       // assert("Zamówienia : Brak zmiennej ilosci wierszy lub zmienna posiada wartość ujemną");
-    }
+    $orders = $q->fetchAll();
 
-    $results = $app['dbs']['mysql_read']->fetchAll($sql_zamowienia, array ((int) $rows , (int) $customer_id)  );
+    $sql_products = "select * from tbl_products";
 
-    return $app['twig']->render('zamowienia.html.twig', array('orders' => $results));
+    $products = buildTree($app['dbs']['mysql_read']->fetchAll($sql_products));
+
+    //error_log(print_r($products,true));
+
+    // do zdebugowania
+    //$results = $app['dbs']['mysql_read']->fetchAll($sql_zamowienia, array('customer_id' => (int) $customer_id,'rows' => (int) $rows) );
+
+    return $app['twig']->render('zamowienia.html.twig', array('orders' => $orders , 'products' => $products));
 })
     ->bind('zamowienia')
 ;

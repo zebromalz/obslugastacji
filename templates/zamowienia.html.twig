@@ -31,13 +31,13 @@
             <table class="table table-striped">
                 <thead>
                 <tr>
-                    <th>ID Zamówienia</th>
+                    <th>ID</th>
                     <th>Numer Własny</th>
                     <th>Numer Faktury</th>
                     <th>Adres Dostawy</th>
                     <th>Status Platnosci</th>
                     <th>Status Zamowienia</th>
-                    <th>Zamówiono</th>
+                    <th>Data Utworzenia</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -126,24 +126,27 @@
                                 <div class="row">
                                     <ul id="tree2">
                                         <li><a href="#">Katalog</a>
-                                            <ul>
-                                                <li>Paliwa
-                                                    <ul>
-                                                        <li>Bezołowiowa 95 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
-                                                        <li>Bezołowiowa 95 Premium <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
-                                                        <li>Bezołowiowa 98 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
-                                                        <li>Bezołowiowa 98 Premium <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
-                                                    </ul>
-                                                </li>
-                                                <li>Eksploatacja
-                                                    <ul>
-                                                        <li>Olej 1 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
-                                                        <li>Olej 2 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
-                                                        <li>Olej 3 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
-                                                        <li>Olej 4 <button type="button" class="btn btn-xs btn-success">[ dodaj ]</button></li>
-                                                    </ul>
-                                                </li>
-                                            </ul>
+
+
+                                            {%  macro productMacro(array) %}
+                                                {% import _self as pmacro %}
+                                                <ul>
+                                                    {% for product in array %}
+                                                        <li>
+                                                            <a href="{{ product.product_id }}">{{ product.product_name }}</a>
+                                                            {% if not product.children|default([]) is empty %}
+
+                                                                  {{ pmacro.productMacro(product.children) }}
+
+                                                            {% endif %}
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endmacro %}
+
+                                            {% import _self as pmacro2 %}
+                                            {{  pmacro2.productMacro(products) }}
+
                                         </li>
                                     </ul>
                                     <p>
