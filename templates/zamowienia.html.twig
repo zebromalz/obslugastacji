@@ -133,7 +133,8 @@
                                                 <ul>
                                                     {% for product in array %}
                                                         <li>
-                                                            <a href="{{ product.product_id }}">{{ product.product_name }}</a>
+
+                                                            {{ product.product_name }} {{ product. }}<button id="{{ product.product_id }}" type="button" class="btn btn-xs btn-success">[ dodaj ]</button>
                                                             {% if not product.children|default([]) is empty %}
 
                                                                   {{ pmacro.productMacro(product.children) }}
