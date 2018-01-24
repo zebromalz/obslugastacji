@@ -132,15 +132,27 @@
                                                 {% import _self as pmacro %}
                                                 <ul>
                                                     {% for product in array %}
-                                                        <li>
 
-                                                            {{ product.product_name }} {{ product. }}<button id="{{ product.product_id }}" type="button" class="btn btn-xs btn-success">[ dodaj ]</button>
+                                                        {% if product.product_is_active %}
+                                                        <li title="{{ product.product_desc }}">
+
+                                                            {{ product.product_name }}
+
+                                                            {% if not product.product_is_category %}
+
+                                                            {{ (product.product_base_value/100)|number_format(2, '.', ',') }} zł / {{ product.product_base_size }}
+
+                                                            <button id="{{ product.product_id }}" type="button" class="btn btn-xs btn-success">[ dodaj ]</button>
+
+                                                            {% endif %}
+
                                                             {% if not product.children|default([]) is empty %}
 
                                                                   {{ pmacro.productMacro(product.children) }}
 
                                                             {% endif %}
                                                         </li>
+                                                        {% endif %}
                                                     {% endfor %}
                                                 </ul>
                                             {% endmacro %}

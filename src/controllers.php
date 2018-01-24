@@ -70,7 +70,28 @@ $app->get('/konto', function () use ($app) {
 ;
 
 $app->get('/kontodane', function () use ($app) {
-    return $app['twig']->render('kontodane.html.twig', array());
+
+    $customer_id = 1; //dodac wczytanie id klienta ktory jest zalogowany.
+
+    $sql_kontodane = "select c_id,c_name,c_surname,c_phone,c_email,c_registered,c_islocked,c_isactive from tbl_customers where c_id = :customer_id LIMIT 1;";
+
+    $q_kontodane = $app['dbs']['mysql_read']->prepare($sql_kontodane);
+    $q_kontodane->bindValue(':customer_id',$customer_id,PDO::PARAM_INT);
+    $q_kontodane->execute();
+
+    $sql_cards = "SELECT card_id , card_type , CONCAT(\"*****\", SUBSTRING(card_number, -4) )as card_number , card_expiry , card_active FROM tbl_cards where card_user=:customer_id;";
+
+    $q_cards = $app['dbs']['mysql_read']->prepare($sql_cards);
+    $q_cards->bindValue(':customer_id',$customer_id,PDO::PARAM_INT);
+    $q_cards->execute();
+
+    $sql_address = "SELECT * from tbl_customer_address where a_c_id=:customer_id;";
+
+    $q_address = $app['dbs']['mysql_read']->prepare($sql_address);
+    $q_address->bindValue(':customer_id',$customer_id,PDO::PARAM_INT);
+    $q_address->execute();
+
+    return $app['twig']->render('kontodane.html.twig', array('kontodane' => $q_kontodane , 'cards' => $q_cards , 'address' => $q_address));
 })
     ->bind('kontodane')
 ;

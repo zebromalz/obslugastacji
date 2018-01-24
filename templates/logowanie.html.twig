@@ -1,32 +1,35 @@
 {% extends "layout.html.twig" %}
 
+{% block css %}
+    <link href="{{  asset('css/login.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block menu %}
     brak menu.
 {% endblock %}
 
 {% block content %}
-LOGOWANIE
+    <div class="container">
+
+        <form class="form-signin">
+            <img class="mb-4 center-block" src="{{ asset('assets/brand/bootstrap-solid.svg') }}" alt="" width="72" height="72">
+            <h2 class="form-signin-heading center-block">Obsługa Stacji</h2>
+            <label for="inputEmail" class="sr-only">Adres E-mail</label>
+            <input type="email" id="inputEmail" class="form-control" placeholder="Adres Mail" required autofocus>
+            <label for="inputPassword" class="sr-only">Hasło</label>
+            <input type="password" id="inputPassword" class="form-control" placeholder="Hasło" required>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" value="remember-me"> Zapamiętaj Mnie
+                </label>
+            </div>
+            <button class="btn btn-lg btn-primary btn-block" type="submit">Zaloguj się</button>
+        </form>
+
+    </div> <!-- /container -->
 
 {% endblock %}
 
 {% block scripts %}
-    <script>
-    function showPassword() {
 
-    var key_attr = $('#key').attr('type');
-
-    if(key_attr != 'text') {
-
-    $('.checkbox').addClass('show');
-    $('#key').attr('type', 'text');
-
-    } else {
-
-    $('.checkbox').removeClass('show');
-    $('#key').attr('type', 'password');
-
-    }
-
-    }
-    </script>
 {% endblock %}
