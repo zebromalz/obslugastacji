@@ -57,10 +57,13 @@ $app->get('/pomoc', function () use ($app) {
     ->bind('pomoc')
 ;
 
-$app->get('/logowanie', function () use ($app) {
-    return $app['twig']->render('logowanie.html.twig', array());
+$app->get('/login', function (Request $request) use ($app) {
+    return $app['twig']->render('logowanie.html.twig', array(
+        'error'         => $app['security.last_error']($request),
+        'last_username' => $app['session']->get('_security.last_username'),
+    ));
 })
-    ->bind('logowanie')
+    ->bind('login')
 ;
 
 $app->get('/konto', function () use ($app) {

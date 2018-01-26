@@ -19,6 +19,25 @@ $app->error(function (\Exception $e, $code) use($app) {
     // ...
 });
 
+$app->register(new Silex\Provider\SessionServiceProvider());
+
+$app->register(new Silex\Provider\SecurityServiceProvider(),
+    array(
+    'security.firewalls' => array(
+                                    'login' => array(
+                                                'pattern' => '^/login$',
+                                                    ),
+                                    'secured' => array(
+                                                'pattern' => '^.*$',
+                                                'form' => array('login_path' => '/login', 'check_path' => '/login_check'),
+                                                'users' => array(
+                                                'admin' => array('ROLE_ADMIN', '$2y$10$3i9/lVd8UOFIJ6PAMFt8gu3/r5g0qeCJvoSlLCsvMTythye19F77a'),
+                                ),
+                                                ),
+                                )
+    )
+);
+
 
 $app['twig'] = $app->extend('twig', function ($twig, $app) {
     // add custom globals, filters, tags, ...
