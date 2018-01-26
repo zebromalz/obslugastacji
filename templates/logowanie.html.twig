@@ -14,11 +14,11 @@
         <form class="form-signin" action="{{ path('login_check') }}" method="post">
             <img class="mb-4 center-block" src="{{ asset('assets/brand/bootstrap-solid.svg') }}" alt="" width="72" height="72">
             <h2 class="form-signin-heading center-block">Obsługa Stacji</h2>
-            <h2><span class="label label-danger center-block">{{ error }}</span></h2>
+            <h3><span class="label label-danger center-block">{{ error }}</span></h3>
             <label for="inputEmail" class="sr-only">Adres E-mail</label>
-            <input type="text" id="inputEmail" class="form-control" placeholder="{{ last_username|default('Adres Mail') }}" required autofocus>
-            <label for="inputPassword" class="sr-only">Hasło</label>
-            <input type="password" id="inputPassword" class="form-control" placeholder="Hasło" required>
+            <input type="text" id="inputEmail" name="_username" class="form-control" placeholder="{{ last_username|default('Adres Mail') }}" required autofocus>
+            <label for="inputPassword"  class="sr-only">Hasło</label>
+            <input type="password" id="inputPassword" name="_password" class="form-control" placeholder="Hasło" required>
             <div class="checkbox">
                 <label>
                     <input type="checkbox" value="remember-me"> Zapamiętaj Mnie

@@ -57,6 +57,7 @@
             {% block menu %}
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
+                    {% if is_granted('IS_AUTHENTICATED_FULLY') %}
                     <li><a href="#glowna">Strona główna</a></li>
                     <li class="active"><a href="{{ app.url_generator.generate('zamowienia', {'rows' : rows } ) }}">Zamówienia</a></li>
                     <li class="dropdown">
@@ -67,8 +68,10 @@
                         </ul>
                     </li>
                     <li><a href="{{ app.url_generator.generate('pomoc')}}">Pomoc</a></li>
-                    <li><a href="{{ app.url_generator.generate('logowanie')}}">Logowanie</a></li>
-
+                    <li><a href="{{ path('logout') }}">Wyloguj</a></li>
+                    {% else %}
+                    <li><a href="{{ app.url_generator.generate('login')}}">Logowanie</a></li>
+                    {% endif %}
                 </ul>
 
             </div><!--/.nav-collapse -->
