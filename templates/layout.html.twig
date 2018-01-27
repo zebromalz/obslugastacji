@@ -1,6 +1,7 @@
 {% set navigation_bar = [['index', 'Home Page'], ['blog', 'Blog'], ['archive', 'Archive']] %}
 {% set active_page = active_page|default('index') %}
 {% set rows = rows|default('10') %}
+{% set customer_name = customer_name|default('') %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -46,13 +47,14 @@
     <nav class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
             <div class="navbar-header">
+                <img class="mb-1 bottom-left" src="{{ asset('assets/brand/bootstrap-solid.svg') }}" alt="" width="48" height="48">
                 <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
                     <span class="sr-only">Toggle navigation</span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="#">Obsługa Stacji Panel Klienta</a>
+                <a class="navbar-brand" href="#">Panel Klienta</a>
             </div>
             {% block menu %}
             <div id="navbar" class="navbar-collapse collapse">
@@ -68,7 +70,7 @@
                         </ul>
                     </li>
                     <li><a href="{{ app.url_generator.generate('pomoc')}}">Pomoc</a></li>
-                    <li><a href="{{ path('logout') }}">Wyloguj</a></li>
+                    <li><a href="{{ path('logout') }}">Wyloguj ( {{ customer }} {{ customer_name }} )</a></li>
                     {% else %}
                     <li><a href="{{ app.url_generator.generate('login')}}">Logowanie</a></li>
                     {% endif %}
