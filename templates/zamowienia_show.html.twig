@@ -1,0 +1,9 @@
+ {% for item in ordered_items %}
+    <tr>
+        <th>{{  loop.index }}</th>
+        <th>{{  item.product }}</th>
+        <th>{{ (item.oi_price/100)|number_format(2, '.', ',') }} zł</th>
+        <th>{{  item.oi_amount }}</th>
+        <th>{{ (item.oi_price*item.oi_amount/100)|number_format(2, '.', ',') }} zł</th>
+    </tr>
+ {% endfor %}

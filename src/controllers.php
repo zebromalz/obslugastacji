@@ -29,6 +29,93 @@ $app->get('/', function () use ($app) {
 ->bind('glowna')
 ;
 
+$app->post('/zamowienia_show', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        // Nie podano id zamowienia , tworzenie nowego lu otwarcie juz rozpoczetego zamowienia.
+        if($request->get('order_id') == NULL){
+
+            $q_order_sql = "SELECT Count(*)as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 ;";
+
+            $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
+            $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
+            $open_order->execute();
+
+            $order = $open_order->fetch();
+
+            return $order['cc']."<=Orders ".$customer_id."<= Customer ".$order['o_id']."<=Order_id";
+
+            assert($order['cc'] > 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
+
+            if($order[cc] < 1){
+
+                return "123";
+
+                $app['dbs']['mysql_read']->insert('tbl_orders',array('o_c_id' => $customer_id, 'o_c_isbasket' => 1));
+                $app['dbs']['mysql_read']->commit();
+
+                $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
+                $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
+                $open_order->execute();
+
+                $order = $open_order->fetch();
+
+            }
+            $order_id = $order['o_id'];
+
+            assert($order_id <> NULL ,"Sprawdzenie poprawnosci zapisu");
+
+        }else{
+            $order_id = $request->get('order_id');
+        }
+
+
+        $q_ordered_items_sql = "SELECT 
+	
+    (SELECT product_name from tbl_products where product_id = oi_item_id ) as product_name ,
+    oi_amount ,
+    oi_price ,
+    oi_order_id,
+    (SELECT o_c_id from tbl_orders where o_id = oi_order_id  ) as order_owner_id,
+    (SELECT o_c_isbasket from tbl_orders where o_id = oi_order_id) as basket,
+    (SELECT product_name from tbl_products where product_id = (SELECT product_parent from tbl_products where product_id = tbl_order_items.oi_item_id ) )as product_parent,
+    (SELECT concat(product_parent, \" -> \" , product_name)) as product
+    
+FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
+
+        $q_ordered_items = $app['dbs']['mysql_read']->prepare($q_ordered_items_sql);
+        $q_ordered_items->bindValue(':order_id', $order_id, PDO::PARAM_STR);
+        $q_ordered_items->execute();
+
+        $items = $q_ordered_items->fetchAll();
+
+        if(assert($customer_id <> $items[0]['order_owner_id'],
+            'Sprawdzenie uprawnien : Wykryto probe nieautoryzowanego dostepu klienta '.$customer_id.' do zamownienia na koncie innego uzytkownika'))
+        {
+            return "Nieoczekiwany Błąd A1789";
+        }
+
+        return $app['twig']->render('zamowienia_show.html.twig', array('ordered_items' => $items));
+    }else{
+        return "Nieoczekiwany Błąd A1790";
+    }
+})
+    ->bind('zamowienia_show')
+;
+
 $app->get('/zamowienia/{rows}', function ($rows) use ($app) {
 
     $token = $app['security.token_storage']->getToken();
@@ -69,7 +156,22 @@ $app->get('/zamowienia/{rows}', function ($rows) use ($app) {
 
     $products = buildTree($app['dbs']['mysql_read']->fetchAll($sql_products));
 
-    return $app['twig']->render('zamowienia.html.twig', array('orders' => $orders , 'products' => $products , 'customer' => $customer_id , 'customer_name' => $customer['c_name'] ));
+    $q_locations = "SELECT a_id , a_name from tbl_customer_address where a_c_id=:customer_id;";
+
+    $q_locations = $app['dbs']['mysql_read']->prepare($q_locations);
+    $q_locations->bindValue(':customer_id',$customer_id,PDO::PARAM_INT);
+    $q_locations->execute();
+
+    $locations = $q_locations->fetchAll();
+
+    return $app['twig']->render('zamowienia.html.twig', array(
+        'orders' => $orders ,
+        'products' => $products ,
+        'customer' => $customer_id ,
+        'customer_name' => $customer['c_name'],
+        'locations' => $locations
+
+        ));
     }else{
         return "ERROR MISSING USER ID";
     }
