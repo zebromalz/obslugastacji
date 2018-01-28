@@ -32,6 +32,9 @@ $app->get('/', function () use ($app) {
 $app->post('/zamowienia_show', function (Request $request) use ($app) {
 
     $token = $app['security.token_storage']->getToken();
+
+    assert(null !== $token, "Sprawdzenie poprawnosci sesji uzytkownia oraz jego tokenu");
+
     if (null !== $token) {
         $user = $token->getUser();
 
@@ -104,19 +107,19 @@ FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
 
         $items = $q_ordered_items->fetchAll();
 
-        //assert($customer_id <> $items[0]['order_owner_id'],
-        //    'Sprawdzenie uprawnien : Wykryto probe nieautoryzowanego dostepu klienta '.$customer_id.' do zamownienia na koncie innego uzytkownika');
+        assert($customer_id <> $items[0]['order_owner_id'],
+            'Sprawdzenie uprawnien : Wykryto probe nieautoryzowanego dostepu klienta o id'.$customer_id.' do zamownienia na koncie innego uzytkownika');
 
         if($customer_id <> $items[0]['order_owner_id'])
         {
-            //return $order['cc']."<=Orders ".$customer_id."<= Customer ".$order['o_id']."<=Order_id";
-            return "Nieoczekiwany Błąd A1789 customer_id[".$customer_id."] order_owner_id[".$items[0]['order_owner_id']."]";
+            return "Nieoczekiwany Błąd A1789";
         }
 
         return $app['twig']->render('zamowienia_show.html.twig', array('ordered_items' => $items));
     }else{
         return "Nieoczekiwany Błąd A1790";
     }
+
 })
     ->bind('zamowienia_show')
 ;
