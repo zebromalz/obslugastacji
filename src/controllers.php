@@ -48,10 +48,12 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
 
         $customer_id = $customer['c_id'];
 
-        // Nie podano id zamowienia , tworzenie nowego lu otwarcie juz rozpoczetego zamowienia.
+        // Nie podano id zamowienia , tworzenie nowego lub otwarcie juz rozpoczetego zamowienia.
         if($request->get('order_id') == NULL){
 
-            $q_order_sql = "SELECT Count(*)as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 ;";
+            return "ehehe";
+
+            $q_order_sql = "SELECT Count(*) as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 ;";
 
             $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
             $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);

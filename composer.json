@@ -18,11 +18,11 @@
         "symfony/form": "~2.8|^3.0",
         "symfony/monolog-bridge": "~2.8|^3.0",
         "symfony/process": "~2.8|^3.0",
-        "symfony/security": "~2.8|^3.0",
+        "symfony/security": "^3.4",
         "symfony/translation": "~2.8|^3.0",
         "symfony/twig-bridge": "~2.8|^3.0",
         "symfony/validator": "~2.8|^3.0",
-	    "moriony/silex-sentry-provider": "~2.0.0",
+	"moriony/silex-sentry-provider": "~2.0.0",
         "doctrine/dbal": "^2.5"
     },
     "autoload": {
