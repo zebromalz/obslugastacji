@@ -125,7 +125,7 @@
 
                             <div class="container" style="margin-top:30px;">
                                 <div class="row">
-                                    <ul id="tree2">
+                                    <ul id="tree">
                                         <li><a href="#">Katalog</a>
 
 
@@ -181,22 +181,7 @@
                                     </tr>
                                     </thead>
                                     <tbody id="zamowienie">
-                                    <tr>
-                                        <th>1</th>
-                                        <th>Bezołowiowa 95</th>
-                                        <th>4.37</th>
-                                        <th>1200.00</th>
-                                        <th>5244.00</th>
-                                        <th><button type="button" class="btn btn-xs btn-danger">[ usuń ]</button></th>
-                                    </tr>
-                                    <tr>
-                                        <td>2</td>
-                                        <th>Bezołowiowa 98</th>
-                                        <th>4.77</th>
-                                        <th>1200.00</th>
-                                        <th>5724.00</th>
-                                        <th><button type="button" class="btn btn-xs btn-danger">[ usuń ]</button></th>
-                                    </tr>
+                                    <!-- Tutaj zostanie wczytane zamówienie -->
                                     </tbody>
                                 </table>
                             </div>
@@ -219,11 +204,13 @@
 {% block scripts %}
     <script src="{{ asset('js/treeview.js') }}"></script>
     <script>
-        $('#tree1').treed();
 
-        $('#tree2').treed({openedClass:'glyphicon-folder-open', closedClass:'glyphicon-folder-close'});
+        $('#tree').treed({openedClass:'glyphicon-folder-open', closedClass:'glyphicon-folder-close'});
 
-        $('#tree3').treed({openedClass:'glyphicon-chevron-right', closedClass:'glyphicon-chevron-down'});
+        $('#neworder').on('show.bs.modal', function (e) {
+            $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show",{order_id:121},function(data,status){$("#zamowienie").html(data)});
+            //if (!data) return e.preventDefault() // stops modal from being shown
+        })
 
     </script>
 {% endblock %}

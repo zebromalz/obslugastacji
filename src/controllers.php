@@ -56,16 +56,16 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
 
             $order = $open_order->fetch();
 
-            return $order['cc']."<=Orders ".$customer_id."<= Customer ".$order['o_id']."<=Order_id";
+            //return $order['cc']."<=Orders ".$customer_id."<= Customer ".$order['o_id']."<=Order_id";
 
             assert($order['cc'] > 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
 
             if($order[cc] < 1){
 
-                return "123";
+                //return "123";
 
                 $app['dbs']['mysql_read']->insert('tbl_orders',array('o_c_id' => $customer_id, 'o_c_isbasket' => 1));
-                $app['dbs']['mysql_read']->commit();
+                //$app['dbs']['mysql_read']->commit();
 
                 $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
                 $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
@@ -82,14 +82,15 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
             $order_id = $request->get('order_id');
         }
 
-
         $q_ordered_items_sql = "SELECT 
 	
+	Count(*) as cnt,
     (SELECT product_name from tbl_products where product_id = oi_item_id ) as product_name ,
+    oi_id,
     oi_amount ,
     oi_price ,
     oi_order_id,
-    (SELECT o_c_id from tbl_orders where o_id = oi_order_id  ) as order_owner_id,
+    (SELECT o_c_id from tbl_orders where o_id = :order_id2  ) as order_owner_id,
     (SELECT o_c_isbasket from tbl_orders where o_id = oi_order_id) as basket,
     (SELECT product_name from tbl_products where product_id = (SELECT product_parent from tbl_products where product_id = tbl_order_items.oi_item_id ) )as product_parent,
     (SELECT concat(product_parent, \" -> \" , product_name)) as product
@@ -98,14 +99,18 @@ FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
 
         $q_ordered_items = $app['dbs']['mysql_read']->prepare($q_ordered_items_sql);
         $q_ordered_items->bindValue(':order_id', $order_id, PDO::PARAM_STR);
+        $q_ordered_items->bindValue(':order_id2', $order_id, PDO::PARAM_STR);
         $q_ordered_items->execute();
 
         $items = $q_ordered_items->fetchAll();
 
-        if(assert($customer_id <> $items[0]['order_owner_id'],
-            'Sprawdzenie uprawnien : Wykryto probe nieautoryzowanego dostepu klienta '.$customer_id.' do zamownienia na koncie innego uzytkownika'))
+        //assert($customer_id <> $items[0]['order_owner_id'],
+        //    'Sprawdzenie uprawnien : Wykryto probe nieautoryzowanego dostepu klienta '.$customer_id.' do zamownienia na koncie innego uzytkownika');
+
+        if($customer_id <> $items[0]['order_owner_id'])
         {
-            return "Nieoczekiwany Błąd A1789";
+            //return $order['cc']."<=Orders ".$customer_id."<= Customer ".$order['o_id']."<=Order_id";
+            return "Nieoczekiwany Błąd A1789 customer_id[".$customer_id."] order_owner_id[".$items[0]['order_owner_id']."]";
         }
 
         return $app['twig']->render('zamowienia_show.html.twig', array('ordered_items' => $items));
