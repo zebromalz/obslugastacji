@@ -51,7 +51,7 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
         // Nie podano id zamowienia , tworzenie nowego lub otwarcie juz rozpoczetego zamowienia.
         if($request->get('order_id') == NULL){
 
-            return "ehehe";
+
 
             $q_order_sql = "SELECT Count(*) as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 ;";
 
@@ -64,10 +64,12 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
             //return $order['cc']."<=Orders ".$customer_id."<= Customer ".$order['o_id']."<=Order_id";
 
             assert($order['cc'] > 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
+            return "cc:".$order['cc'];
 
             if($order[cc] < 1){
 
                 //return "123";
+                return "ehehe2";
 
                 $app['dbs']['mysql_read']->insert('tbl_orders',array('o_c_id' => $customer_id, 'o_c_isbasket' => 1));
                 //$app['dbs']['mysql_read']->commit();
@@ -250,6 +252,118 @@ $app->get('/kontodane', function () use ($app) {
     }
 })
     ->bind('kontodane')
+;
+$app->get('/kontodane_block_card/{card_id}', function ($card_id) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        $q_card_update = "UPDATE tbl_cards SET card_active = 0 where card_user = :customer_id AND card_id = :card_id LIMIT 1;";
+
+        $q_card_update = $app['dbs']['mysql_read']->prepare($q_card_update);
+        $q_card_update->bindValue(':customer_id', (int)$customer_id, PDO::PARAM_INT);
+        $q_card_update->bindValue(':card_id', (int)$card_id, PDO::PARAM_INT);
+        $q_card_update->execute();
+
+    }else{
+        return "ERROR MISSING USER ID";
+    }
+    return $app->redirect($app['url_generator']->generate('kontodane'));
+})
+    ->bind('kontodane_block_card')
+;
+
+$app->post('/kontodane_change_pass', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        $encoder = $app['security.encoder_factory']->getEncoder($user);
+
+        $pass_current = $encoder->encodePassword($request->get('pass_current'), $user->getSalt());
+        $pass_new = $encoder->encodePassword($request->get('pass_new'), $user->getSalt());
+
+        if($request->get('pass_new') != NULL AND $request->get('pass_current')){
+
+            $q_card_update = "UPDATE tbl_users SET c_secret = :new_pass where c_id = :customer_id AND c_secret = :old_pass LIMIT 1;";
+
+            $q_card_update = $app['dbs']['mysql_read']->prepare($q_card_update);
+            $q_card_update->bindValue(':customer_id', $customer_id, PDO::PARAM_STR);
+            $q_card_update->bindValue(':old_pass', $pass_current, PDO::PARAM_STR);
+            $q_card_update->bindValue(':new_pass', $pass_new, PDO::PARAM_STR);
+            $q_card_update->execute();
+
+        }
+
+    }else{
+        return "ERROR MISSING USER ID";
+    }
+    return $app->redirect($app['url_generator']->generate('kontodane'));
+})
+    ->bind('kontodane_block_card')
+;
+
+$app->post('/kontodane_edit_user', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+//        $encoder = $app['security.encoder_factory']->getEncoder($user);
+//
+//        $pass_current = $encoder->encodePassword($request->get('pass_current'), $user->getSalt());
+//        $pass_new = $encoder->encodePassword($request->get('pass_new'), $user->getSalt());
+//
+//        if($request->get('pass_new') != NULL AND $request->get('pass_current')){
+//
+//            $q_card_update = "UPDATE tbl_users SET c_secret = :new_pass where c_id = :customer_id AND c_secret = :old_pass LIMIT 1;";
+//
+//            $q_card_update = $app['dbs']['mysql_read']->prepare($q_card_update);
+//            $q_card_update->bindValue(':customer_id', $customer_id, PDO::PARAM_STR);
+//            $q_card_update->bindValue(':old_pass', $pass_current, PDO::PARAM_STR);
+//            $q_card_update->bindValue(':new_pass', $pass_new, PDO::PARAM_STR);
+//            $q_card_update->execute();
+//
+//        }
+
+    }else{
+        return "ERROR MISSING USER ID";
+    }
+    return $app->redirect($app['url_generator']->generate('kontodane'));
+})
+    ->bind('kontodane_edit_user')
 ;
 
 $app->get('/kontostacje', function () use ($app) {

@@ -2,12 +2,14 @@
 
 {% block content %}
 
-    <div class="panel panel-info col-md-3">
+    <div class="row">
+        <div class="col-md-1"></div>
+    <div class="panel panel-info col-md-4">
         <div class="panel-heading">Dane klienta</div>
 
         {% for i in kontodane %}
 
-            <form>
+            <form action="{{ app.url_generator.generate('kontodane_edit_user')}}" method="post">
                 <div class="form-group">
                     <label for="c_name">Imię</label>
                     <input type="text" class="form-control" id="c_name" value="{{ i.c_name }}">
@@ -21,19 +23,105 @@
                     <input type="tel" class="form-control" id="c_phone" value="{{ i.c_phone }}">
                 </div>
                 <div class="form-group">
-                    <label for="c_name">Imię</label>
-                    <input type="text" class="form-control" id="c_name" value="{{ i.c_name }}">
+                    <label for="c_email">Imię</label>
+                    <input type="email" class="form-control" id="c_email" value="{{ i.c_email }}">
                 </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-default"> Zapisz
+                        </button>
+                    </div>
 
-                <button type="submit" class="btn btn-default">Submit</button>
             </form>
-            {{ i.c_id }}/{{ i.c_name }}
 
         {% endfor %}
 
     </div>
-    <div class="panel panel-info col-md-4">
-        <div class="panel-heading">Karty</div>
+    <div class="col-md-1"></div>
+    <div class="col-md-5">
+
+        <div class="row">
+
+        <div class="panel panel-info">
+            <div class="panel-heading">Karty</div>
+
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>LP</th>
+                <th>Typ</th>
+                <th>Numer</th>
+                <th>Ważność</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+
+            {% for i in cards %}
+                <tr>
+                    <th>{{ loop.index }}</th>
+                    <th>{{ i.card_type }}</th>
+                    <th>{{ i.card_number }}</th>
+                    <th>{{ i.card_expiry }}</th>
+                    <th>
+                        {% if i.card_active == 1  %}
+                            <span class="label label-success">Aktywna</span>
+                        {% else %}
+                            <span class="label label-danger">Nie Aktywna</span>
+                        {% endif %}
+                    </th>
+                    <th>
+                    {% if i.card_active == 1  %}
+                        <a href="{{ app.url_generator.generate('kontodane_block_card', {'card_id' : i.card_id })}}"><span class="label label-danger">[ Dezaktywuj ]</span></a>
+                    {% endif %}
+                    </th>
+                    </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+
+        </div>
+        </div>
+        <div class="row">
+        <div class="panel panel-info">
+            <div class="panel-heading">Zmiana Hasła</div>
+
+            <h4><span id="password_error" class="hidden label label-danger">Wprowadzono Błędne Hasło</span></h4>
+
+            <form name="form_pass" id="form_pass" action="{{ app.url_generator.generate('kontodane_edit_user')}}" method="post">
+
+                <div class="form-group">
+                <label for="pass_old">Stare Hasło</label>
+                <input type="password" class="form-control" id="pass_old" name="pass_old" placeholder="" value="" required="">
+                </div>
+
+                <div class="form-group">
+                <label for="firstName">Nowe Hasło</label>
+                <input type="password" class="form-control" id="pass_new" name="pass_new" placeholder="" value="" required="">
+                <div class="different_pass">
+                    <span id="password_same_error1" class="hidden label label-danger">Hasła nie są identyczne.</span>
+                </div>
+                </div>
+
+                <div class="form-group">
+                <label for="firstName">Powtórz Nowe Hasło</label>
+                <input type="password" class="form-control" id="pass_new_repeat" name="pass_new_repeat" placeholder="" value="" required="">
+                <div class="different_pass">
+                    <span id="password_same_error2" class="hidden label label-danger">Hasła nie są identyczne.</span>
+                </div>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-default"> Zapisz
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+        </div>
+
     </div>
     </div>
 
@@ -41,6 +129,15 @@
 
 {% block scripts %}
     <script>
+
+        $('#form_pass').submit(function() {
+            if ($('#pass_new').val().localeCompare($('#pass_new').val()) != 0) {
+                $('#password_same_error1').removeClass('hidden');
+                $('#password_same_error2').removeClass('hidden');
+                return false;
+            }
+        });
+
     function showPassword() {
 
     var key_attr = $('#key').attr('type');

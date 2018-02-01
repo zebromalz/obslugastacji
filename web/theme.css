@@ -16,3 +16,49 @@ body {
 .theme-showcase .navbar .container {
   width: auto;
 }
+.label-default {
+  background-color: #777;
+}
+.label-default[href]:hover,
+.label-default[href]:focus {
+  background-color: #5e5e5e;
+}
+.label-primary {
+  background-color: #337ab7;
+}
+.label-primary[href]:hover,
+.label-primary[href]:focus {
+  background-color: #286090;
+}
+.label-zrealizowane {
+  background-color: #5cb85c;
+}
+.label-oplacone {
+  background-color: #5cb85c;
+}
+.label-zrealizowane[href]:hover,
+.label-zrealizowane[href]:focus {
+  background-color: #449d44;
+}
+.label-przetwarzanie {
+  background-color: #5bc0de;
+}
+.label-przetwarzanie[href]:hover,
+.label-przetwarzanie[href]:focus {
+  background-color: #31b0d5;
+}
+.label-opoznione {
+  background-color: #f0ad4e;
+}
+.label-opoznione[href]:hover,
+.label-opoznione[href]:focus {
+  background-color: #ec971f;
+}
+.label-wycofane {
+  background-color: #d9534f;
+}
+.label-wycofane[href]:hover,
+.label-wycofane[href]:focus {
+  background-color: #c9302c;
+}
+
