@@ -8,4 +8,5 @@ require __DIR__.'/php/functions.php';
 $app = require __DIR__.'/../src/app.php';
 require __DIR__.'/../config/dev.php';
 require __DIR__.'/../src/controllers.php';
+$app['monolog']->debug('LOGTEST');
 $app->run();

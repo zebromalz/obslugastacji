@@ -93,6 +93,10 @@ $app->register(new Silex\Provider\SecurityServiceProvider(),
 //    array('^.*$', 'ROLE_ADMIN'),
 //);
 
+$app->register(new Silex\Provider\MonologServiceProvider(), array(
+    'monolog.logfile' => __DIR__.'/dev.log',
+));
+
 $app['twig'] = $app->extend('twig', function ($twig, $app) {
     // add custom globals, filters, tags, ...
 

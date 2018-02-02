@@ -4,27 +4,28 @@
 
     <div class="row">
         <div class="col-md-1"></div>
-    <div class="panel panel-info col-md-4">
-        <div class="panel-heading">Dane klienta</div>
+        <div class="col-md-4">
+    <div class="panel panel-info">
+        <div class="panel-heading">Dane Klienta</div>
 
         {% for i in kontodane %}
 
             <form action="{{ app.url_generator.generate('kontodane_edit_user')}}" method="post">
                 <div class="form-group">
                     <label for="c_name">Imię</label>
-                    <input type="text" class="form-control" id="c_name" value="{{ i.c_name }}">
+                    <input type="text" class="form-control" id="c_name" name="c_name" value="{{ i.c_name }}">
                 </div>
                 <div class="form-group">
                     <label for="c_surname">Nazwisko</label>
-                    <input type="text" class="form-control" id="c_surname" value="{{ i.c_surname }}">
+                    <input type="text" class="form-control" id="c_surname" name="c_surname" value="{{ i.c_surname }}">
                 </div>
                 <div class="form-group">
                     <label for="c_phone">Telefon</label>
-                    <input type="tel" class="form-control" id="c_phone" value="{{ i.c_phone }}">
+                    <input type="tel" class="form-control" id="c_phone" name="c_phone" value="{{ i.c_phone }}">
                 </div>
                 <div class="form-group">
-                    <label for="c_email">Imię</label>
-                    <input type="email" class="form-control" id="c_email" value="{{ i.c_email }}">
+                    <label for="c_email">E-Mail</label>
+                    <input type="email" class="form-control" id="c_email" name="c_email" value="{{ i.c_email }}">
                 </div>
                     <div class="text-center">
                         <button type="submit" class="btn btn-default"> Zapisz
@@ -36,6 +37,7 @@
         {% endfor %}
 
     </div>
+        </div>
     <div class="col-md-1"></div>
     <div class="col-md-5">
 
@@ -89,12 +91,13 @@
 
             <h4><span id="password_error" class="hidden label label-danger">Wprowadzono Błędne Hasło</span></h4>
 
-            <form name="form_pass" id="form_pass" action="{{ app.url_generator.generate('kontodane_edit_user')}}" method="post">
+            <form name="form_pass" id="form_pass" action="{{ app.url_generator.generate('kontodane_change_pass')}}" method="post">
 
-                <div class="form-group">
+                <!--<div class="form-group">
                 <label for="pass_old">Stare Hasło</label>
                 <input type="password" class="form-control" id="pass_old" name="pass_old" placeholder="" value="" required="">
                 </div>
+                -->
 
                 <div class="form-group">
                 <label for="firstName">Nowe Hasło</label>
@@ -113,8 +116,7 @@
                 </div>
 
                 <div class="text-center">
-                    <button type="submit" class="btn btn-default"> Zapisz
-                    </button>
+                    <button type="submit" class="btn btn-default"> Zapisz </button>
                 </div>
 
             </form>
@@ -123,6 +125,41 @@
         </div>
 
     </div>
+    </div>
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="panel panel-info col-lg-10">
+            <div class="panel-heading">Stacje Użytkownika</div>
+
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>LP</th>
+                    <th>Miasto</th>
+                    <th>Kod Pocztowy</th>
+                    <th>Ulica</th>
+                    <th>Ulica Adres</th>
+                    <th>Nazwa</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {% for a in address %}
+                    <tr>
+                        <th>{{ loop.index }}</th>
+                        <th>{{ a.a_city }}</th>
+                        <th>{{ a.a_postcode }}</th>
+                        <th>{{ a.a_street_address }}</th>
+                        <th>{{ a.a_street_address }}</th>
+                        <th>{{ a.a_name }}</th>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+            </table>
+
+        </div>
+        <div class="col-md-1"></div>
     </div>
 
 {% endblock %}

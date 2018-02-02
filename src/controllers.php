@@ -302,27 +302,31 @@ $app->post('/kontodane_change_pass', function (Request $request) use ($app) {
 
         $encoder = $app['security.encoder_factory']->getEncoder($user);
 
-        $pass_current = $encoder->encodePassword($request->get('pass_current'), $user->getSalt());
+
+
+        //$pass_current = $encoder->encodePassword($request->get('pass_current'), $user->getSalt());
         $pass_new = $encoder->encodePassword($request->get('pass_new'), $user->getSalt());
 
-        if($request->get('pass_new') != NULL AND $request->get('pass_current')){
+        //if(( $request->get('pass_new')  NULL ) AND ($request->get('pass_current') <> NULL ) ){
 
-            $q_card_update = "UPDATE tbl_users SET c_secret = :new_pass where c_id = :customer_id AND c_secret = :old_pass LIMIT 1;";
+            $q_card_update = "UPDATE tbl_customers SET c_secret = :new_pass where c_id = :customer_id;";// AND ( STRCMP(c_secret,:old_pass) = 0 ) LIMIT 1;";
 
             $q_card_update = $app['dbs']['mysql_read']->prepare($q_card_update);
             $q_card_update->bindValue(':customer_id', $customer_id, PDO::PARAM_STR);
-            $q_card_update->bindValue(':old_pass', $pass_current, PDO::PARAM_STR);
+            //$q_card_update->bindValue(':old_pass', $pass_current, PDO::PARAM_STR);
             $q_card_update->bindValue(':new_pass', $pass_new, PDO::PARAM_STR);
             $q_card_update->execute();
 
-        }
+            //return '/kontodane_change_pass pass_new='.$pass_new.' /kontodane_change_pass pass_new='.$pass_current;
+
+        //}
 
     }else{
         return "ERROR MISSING USER ID";
     }
     return $app->redirect($app['url_generator']->generate('kontodane'));
 })
-    ->bind('kontodane_block_card')
+    ->bind('kontodane_change_pass')
 ;
 
 $app->post('/kontodane_edit_user', function (Request $request) use ($app) {
@@ -341,22 +345,21 @@ $app->post('/kontodane_edit_user', function (Request $request) use ($app) {
 
         $customer_id = $customer['c_id'];
 
-//        $encoder = $app['security.encoder_factory']->getEncoder($user);
-//
-//        $pass_current = $encoder->encodePassword($request->get('pass_current'), $user->getSalt());
-//        $pass_new = $encoder->encodePassword($request->get('pass_new'), $user->getSalt());
-//
-//        if($request->get('pass_new') != NULL AND $request->get('pass_current')){
-//
-//            $q_card_update = "UPDATE tbl_users SET c_secret = :new_pass where c_id = :customer_id AND c_secret = :old_pass LIMIT 1;";
-//
-//            $q_card_update = $app['dbs']['mysql_read']->prepare($q_card_update);
-//            $q_card_update->bindValue(':customer_id', $customer_id, PDO::PARAM_STR);
-//            $q_card_update->bindValue(':old_pass', $pass_current, PDO::PARAM_STR);
-//            $q_card_update->bindValue(':new_pass', $pass_new, PDO::PARAM_STR);
-//            $q_card_update->execute();
-//
-//        }
+        $q_user_update = "UPDATE tbl_customers 
+                                               SET c_name = :customer_name,
+                                                   c_surname = :customer_surname ,
+                                                   c_phone = :customer_phone ,
+                                                   c_email = :customer_email
+                          
+                          where c_id = :customer_id LIMIT 1;";
+
+        $q_user_update = $app['dbs']['mysql_read']->prepare($q_user_update);
+        $q_user_update->bindValue(':customer_name',     $request->get('c_name'), PDO::PARAM_STR);
+        $q_user_update->bindValue(':customer_surname',  $request->get('c_surname'), PDO::PARAM_STR);
+        $q_user_update->bindValue(':customer_phone',    $request->get('c_phone'), PDO::PARAM_STR);
+        $q_user_update->bindValue(':customer_email',    $request->get('c_email'), PDO::PARAM_STR);
+        $q_user_update->bindValue(':customer_id',       (int)$customer_id, PDO::PARAM_STR);
+        $q_user_update->execute();
 
     }else{
         return "ERROR MISSING USER ID";
