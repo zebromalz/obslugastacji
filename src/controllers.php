@@ -240,7 +240,7 @@ $app->get('/kontodane', function () use ($app) {
         $q_cards->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
         $q_cards->execute();
 
-        $sql_address = "SELECT * from tbl_customer_address where a_c_id=:customer_id;";
+        $sql_address = "SELECT * from tbl_customer_address where a_c_id=:customer_id AND a_active = 1;";
 
         $q_address = $app['dbs']['mysql_read']->prepare($sql_address);
         $q_address->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
@@ -284,6 +284,140 @@ $app->get('/kontodane_block_card/{card_id}', function ($card_id) use ($app) {
     ->bind('kontodane_block_card')
 ;
 
+$app->get('/kontodane_block_address/{address_id}', function ($address_id) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        $q_address_update = "UPDATE tbl_customer_address SET a_active = 0 where a_c_id = :customer_id AND a_id = :address_id LIMIT 1;";
+
+        $q_address_update = $app['dbs']['mysql_read']->prepare($q_address_update);
+        $q_address_update->bindValue(':customer_id', (int)$customer_id, PDO::PARAM_INT);
+        $q_address_update->bindValue(':address_id', (int)$address_id, PDO::PARAM_INT);
+        $q_address_update->execute();
+
+    }else{
+        return "ERROR MISSING USER ID";
+    }
+    return $app->redirect($app['url_generator']->generate('kontodane'));
+})
+    ->bind('kontodane_block_address')
+;
+
+$app->get('/kontodane_edit_address_/{address_id}', function ($address_id) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        if($address_id > 0) {
+            $q_address_query = "SELECT * FROM tbl_customer_address where a_id = :address_id AND a_c_id = :customer_id  LIMIT 1;";
+
+            $q_address_query = $app['dbs']['mysql_read']->prepare($q_address_query);
+            $q_address_query->bindValue(':customer_id', (int)$customer_id, PDO::PARAM_INT);
+            $q_address_query->bindValue(':address_id', (int)$address_id, PDO::PARAM_INT);
+            $q_address_query->execute();
+
+        }else{
+
+            $q_address_query = array (
+
+                array(
+                'a_id' => NULL ,
+                'a_city' => '' ,
+                'a_postcode' => '' ,
+                'a_street' => '' ,
+                'a_street_address' => '' ,
+                'a_name' => '' ,
+                'a_c_id' => $customer_id
+            )
+
+            );
+        }
+
+    }else{
+        return "ERROR MISSING USER ID";
+    }
+    return $app['twig']->render('kontodane_edit_address.html.twig', array('address' => $q_address_query,'customer' => $customer_id));
+
+})
+    ->bind('kontodane_edit_address_')
+;
+
+$app->post('/kontodane_edit_address', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        if($request->get('a_id') == 0) {
+            $q_address_query = "INSERT INTO tbl_customer_address (a_city , a_postcode , a_street , a_street_address , a_name , a_c_id ) VALUES 
+                                                                  (:a_city,:a_postcode, :a_street, :a_street_address, :a_name, :customer_id) ;";
+
+        }else {
+            $q_address_query = "UPDATE tbl_customer_address SET a_city = :a_city,
+                                                                a_postcode = :a_postcode,
+                                                                a_street = :a_street,
+                                                                a_street_address = :a_street_address,
+                                                                a_name = :a_name,
+                                                                a_c_id = :customer_id
+                                                                
+                                WHERE a_id = :address_id AND a_c_id = :customer_id  LIMIT 1;";
+        }
+
+        $q_address_query = $app['dbs']['mysql_read']->prepare($q_address_query);
+        $q_address_query->bindValue(':a_city', $request->get('a_city'), PDO::PARAM_STR);
+        $q_address_query->bindValue(':a_postcode', $request->get('a_postcode'),PDO::PARAM_STR);
+        $q_address_query->bindValue(':a_street', $request->get('a_street'),PDO::PARAM_STR);
+        $q_address_query->bindValue(':a_street_address', $request->get('a_street_address'),PDO::PARAM_STR);
+        $q_address_query->bindValue(':a_name', $request->get('a_name'),PDO::PARAM_STR);
+
+        if($request->get('a_id') > 0){
+            $q_address_query->bindValue(':address_id', (int)$request->get('a_id'), PDO::PARAM_INT);
+        }
+        $q_address_query->bindValue(':customer_id', (int)$customer_id, PDO::PARAM_INT);
+        $q_address_query->execute();
+
+    }else{
+        return "ERROR MISSING USER ID";
+    }
+    return $app->redirect($app['url_generator']->generate('kontodane'));
+
+})
+    ->bind('kontodane_edit_address')
+;
+
 $app->post('/kontodane_change_pass', function (Request $request) use ($app) {
 
     $token = $app['security.token_storage']->getToken();
@@ -301,8 +435,6 @@ $app->post('/kontodane_change_pass', function (Request $request) use ($app) {
         $customer_id = $customer['c_id'];
 
         $encoder = $app['security.encoder_factory']->getEncoder($user);
-
-
 
         //$pass_current = $encoder->encodePassword($request->get('pass_current'), $user->getSalt());
         $pass_new = $encoder->encodePassword($request->get('pass_new'), $user->getSalt());

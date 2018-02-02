@@ -140,6 +140,7 @@
                     <th>Ulica</th>
                     <th>Ulica Adres</th>
                     <th>Nazwa</th>
+                    <th><a href="{{ app.url_generator.generate('kontodane_edit_address_', {'address_id' : 0 }) }}"><span class="label label-success">[ Dodaj ]</span></a></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -149,9 +150,21 @@
                         <th>{{ loop.index }}</th>
                         <th>{{ a.a_city }}</th>
                         <th>{{ a.a_postcode }}</th>
-                        <th>{{ a.a_street_address }}</th>
+                        <th>{{ a.a_street }}</th>
                         <th>{{ a.a_street_address }}</th>
                         <th>{{ a.a_name }}</th>
+                        <th>
+                            {% if a.a_active == 1  %}
+                                <a href="{{ app.url_generator.generate('kontodane_block_address', {'address_id' : a.a_id })}}"><span class="label label-danger">[ Usuń ]</span></a>
+                            {% endif %}
+                        </th>
+                        <th>
+                        <th>
+                            {% if a.a_active == 1  %}
+                                <a href="{{ app.url_generator.generate('kontodane_edit_address_', {'address_id' : a.a_id}) }}"><span class="label label-success">[ Edytuj ]</span></a>
+                            {% endif %}
+                        </th>
+                        </th>
                     </tr>
                 {% endfor %}
 
