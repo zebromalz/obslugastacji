@@ -23,7 +23,8 @@
         "symfony/twig-bridge": "~2.8|^3.0",
         "symfony/validator": "~2.8|^3.0",
 	"moriony/silex-sentry-provider": "~2.0.0",
-        "doctrine/dbal": "^2.5"
+        "doctrine/dbal": "^2.5",
+        "monolog/monolog": "^1.23"
     },
     "autoload": {
         "psr-0": { "": "src/" }

@@ -83,8 +83,6 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
         }
 
         $q_ordered_items_sql = "SELECT 
-	
-	Count(*) as cnt,
     (SELECT product_name from tbl_products where product_id = oi_item_id ) as product_name ,
     oi_id,
     oi_amount ,
@@ -122,6 +120,8 @@ FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
 ;
 
 $app->get('/zamowienia/{rows}', function ($rows) use ($app) {
+
+    $app['monolog']->error('Testing the Monolog logging.');
 
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
@@ -228,43 +228,59 @@ $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
         $item_id = $request->get('item_id');
         $item_count = $request->get('item_count');
 
-        $q_item_add_query = "SELECT COUNT(*) as is_there, oi_id from tbl_order_items where oi_order_id = :order_id AND oi_item_id = :item_id";
+        $q_item_add_query = "SELECT COUNT(*) as is_there, oi_id from tbl_order_items where oi_order_id = :order_id AND oi_item_id = :item_id;";
         $q_item_add = $app['dbs']['mysql_read']->prepare($q_item_add_query);
         $q_item_add->bindValue(':order_id', (int)$order_id, PDO::PARAM_INT);
         $q_item_add->bindValue(':item_id', (int)$item_id, PDO::PARAM_INT);
         $q_item_add->execute();
 
         $itemed = $q_item_add->fetch();
+        $app['monolog']->info('Testing the Monolog logging.');
+        if(($remove = $request->get('remove')) != NULL )
+        {
+            $message = "REMOVE";
+            $q_item_add_ = "DELETE FROM tbl_order_items WHERE oi_id=:oi_id AND oi_order_id = :order_id;";
 
-        if($itemed['is_there'] == 0){
-            $q_item_add_ = "INSERT INTO tbl_order_items (oi_item_id , oi_amount, oi_price , oi_order_id) VALUES 
+            $q_item_add_run = $app['dbs']['mysql_read']->prepare($q_item_add_);
+            //return "[".$remove."][".$order_id."]";
+            $q_item_add_run->bindValue(':oi_id', (int)$remove, PDO::PARAM_INT);
+            $q_item_add->bindValue(':order_id', (int)$order_id, PDO::PARAM_INT);
+
+        }else {
+
+            if ($itemed['is_there'] == 0) {
+                $q_item_add_ = "INSERT INTO tbl_order_items (oi_item_id , oi_amount, oi_price , oi_order_id) VALUES 
                                                           (:item_id ,
                                                            :item_count,
                                                              (SELECT product_base_value FROM tbl_products WHERE product_id = :item_id ),
                                                               :order_id) ;";
-        }else{
-            if($request->get('update_record') == NULL) {
-                $q_item_add_ = "UPDATE tbl_order_items SET oi_amount = oi_amount + :item_count WHERE oi_id = :oi_id LIMIT 1;";
-                     }else{
-                $q_item_add_ = "UPDATE tbl_order_items SET oi_amount = :item_count WHERE oi_id = :oi_id LIMIT 1;";
+                $q_item_add_run = $app['dbs']['mysql_read']->prepare($q_item_add_);
+                $q_item_add_run->bindValue(':item_id', $item_id, PDO::PARAM_INT);
+                $q_item_add_run->bindValue(':order_id', $order_id, PDO::PARAM_INT);
+                $message = "INSERT";
+            } else {
+                if ($request->get('update_record') == NULL) {
+                    $q_item_add_ = "UPDATE tbl_order_items SET oi_amount = oi_amount + :item_count WHERE oi_id = :oi_id LIMIT 1;";
+                    $message = "UPDATE ADD";
+                } else {
+                    $q_item_add_ = "UPDATE tbl_order_items SET oi_amount = :item_count WHERE oi_id = :oi_id LIMIT 1;";
+                    $message = "UPDATE EXACT";
+                }
+                $q_item_add_run = $app['dbs']['mysql_read']->prepare($q_item_add_);
             }
 
-        }
 
-        $q_item_add_run = $app['dbs']['mysql_read']->prepare($q_item_add_);
-        if($itemed['is_there' == 0]) {
-            $q_item_add_run->bindValue(':item_id', $item_id, PDO::PARAM_INT);
-            $q_item_add_run->bindValue(':order_id', $order_id, PDO::PARAM_INT);
-        }
         $q_item_add_run->bindValue(':item_count', $item_count, PDO::PARAM_INT);
         $q_item_add_run->bindValue(':oi_id', $itemed['oi_id'], PDO::PARAM_INT);
+        }
+
         $q_item_add_run->execute();
 
     }else{
-        return "ERROR : 7763";
+        $message = "ERROR : 7763";
     }
 
-    return "OK".$itemed['oi_id']."/".$item_count."/".$item_id;
+    return $message." ".$itemed['oi_id']."/".$item_count."/".$item_id;
 
 })
     ->bind('zamowienia_add_item')

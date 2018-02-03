@@ -1,4 +1,3 @@
-{% if ordered_items[0].cnt > 0 %}
 {% for item in ordered_items %}
     <tr>
         <th>{{  loop.index }} </th>
@@ -6,7 +5,10 @@
         <th>{{ (item.oi_price/100)|number_format(2, '.', ',') }} zł</th>
         <th>{{  item.oi_amount }}</th>
         <th>{{ (item.oi_price*item.oi_amount/100)|number_format(2, '.', ',') }} zł</th>
-        <th><button id="orderitem{{ item.oi_id }}" type="button" class="btn btn-xs btn-danger">[ usuń ]</button></th>
+        <th>
+            <button id="orderitem{{ item.oi_id }}" type="button" onclick="save_order_item({{ item.oi_id }})" class="btn btn-xs btn-danger hidden">[ zapisz ]</button>
+            <button id="orderitem{{ item.oi_id }}" type="button" onclick="remove_order_item({{ item.oi_id }})" class="btn btn-xs btn-danger">[ usuń ]</button>
+
+        </th>
     </tr>
  {% endfor %}
-{% endif %}

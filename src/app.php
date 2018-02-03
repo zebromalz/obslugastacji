@@ -61,12 +61,12 @@ $app->register(new AssetServiceProvider());
 $app->register(new TwigServiceProvider());
 $app->register(new HttpFragmentServiceProvider());
 
-$app->error(function (\Exception $e, $code) use($app) {
-    // ...
-    $client = $app['sentry'];
-    $client->captureException($e);
-    // ...
-});
+//$app->error(function (\Exception $e, $code) use($app) {
+//    // ...
+//    $client = $app['sentry'];
+//    $client->captureException($e);
+//    // ...
+//});
 
 $app->register(new Silex\Provider\SessionServiceProvider());
 
@@ -93,9 +93,7 @@ $app->register(new Silex\Provider\SecurityServiceProvider(),
 //    array('^.*$', 'ROLE_ADMIN'),
 //);
 
-$app->register(new Silex\Provider\MonologServiceProvider(), array(
-    'monolog.logfile' => __DIR__.'/dev.log',
-));
+
 
 $app['twig'] = $app->extend('twig', function ($twig, $app) {
     // add custom globals, filters, tags, ...
