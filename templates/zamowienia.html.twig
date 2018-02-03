@@ -105,6 +105,14 @@
 
                             <!-- Text input-->
                             <div class="form-group">
+                                <label class="col-md-4 control-label" for="orderform_ownid" >Numer Zamówienia</label>
+                                <div class="col-md-4">
+                                    <input id="orderform_ownid" disabled="disabled" name="textinput" type="text" placeholder="" class="form-control input-md">
+                                </div>
+                            </div>
+
+                            <!-- Text input-->
+                            <div class="form-group">
                                 <label class="col-md-4 control-label" for="orderform_ownid" >Numer Własny</label>
                                 <div class="col-md-4">
                                     <input id="orderform_ownid" name="textinput" type="text" placeholder="" class="form-control input-md">
@@ -143,7 +151,7 @@
 
                                                             {{ (product.product_base_value/100)|number_format(2, '.', ',') }} zł / {{ product.product_base_size }}
 
-                                                            <button id="{{ product.product_id }}" type="button" class="btn btn-xs btn-success">[ dodaj ]</button>
+                                                            <button id="{{ product.product_id }}" type="button" onclick="add_order_item({{ product.product_id }},1)" class="btn btn-xs btn-success">[ dodaj ]</button>
 
                                                             {% endif %}
 
@@ -207,9 +215,14 @@
         $('#katalog').treed({openedClass:'glyphicon-folder-open', closedClass:'glyphicon-folder-close'});
 
         $('#neworder').on('show.bs.modal', function (e) {
-            $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show",{order_id:121},function(data,status){$("#zamowienie").html(data)});
+            $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show",{},function(data,status){$("#zamowienie").html(data)});
             //if (!data) return e.preventDefault() // stops modal from being shown
         })
+
+        function add_order_item(i_id,i_amount){
+            $.post("https://obslugastacji.ddns.net/index.php/zamowienia_add_item",{item_id : i_id,item_count : i_amount},function(data,status){});
+            $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show",{},function(data,status){$("#zamowienie").html(data)});
+        }
 
     </script>
 {% endblock %}

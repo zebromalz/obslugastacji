@@ -51,8 +51,6 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
         // Nie podano id zamowienia , tworzenie nowego lub otwarcie juz rozpoczetego zamowienia.
         if($request->get('order_id') == NULL){
 
-
-
             $q_order_sql = "SELECT Count(*) as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 ;";
 
             $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
@@ -64,15 +62,10 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
             //return $order['cc']."<=Orders ".$customer_id."<= Customer ".$order['o_id']."<=Order_id";
 
             assert($order['cc'] > 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
-            return "cc:".$order['cc'];
 
-            if($order[cc] < 1){
-
-                //return "123";
-                return "ehehe2";
+            if($order['cc'] == 0){
 
                 $app['dbs']['mysql_read']->insert('tbl_orders',array('o_c_id' => $customer_id, 'o_c_isbasket' => 1));
-                //$app['dbs']['mysql_read']->commit();
 
                 $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
                 $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
@@ -189,6 +182,92 @@ $app->get('/zamowienia/{rows}', function ($rows) use ($app) {
     }
 })
     ->bind('zamowienia')
+;
+
+$app->post('/zamowienia_add_item', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        $q_order_sql = "SELECT Count(*) as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 ;";
+
+        $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
+        $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
+        $open_order->execute();
+
+        $order = $open_order->fetch();
+
+        assert($order['cc'] > 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
+
+        if($order['cc'] == 0){
+
+            $app['dbs']['mysql_read']->insert('tbl_orders',array('o_c_id' => $customer_id, 'o_c_isbasket' => 1));
+
+            $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
+            $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
+            $open_order->execute();
+
+            $order = $open_order->fetch();
+
+        }
+        $order_id = $order['o_id'];
+
+        assert($order_id <> NULL ,"Sprawdzenie poprawnosci zapisu");
+
+        $item_id = $request->get('item_id');
+        $item_count = $request->get('item_count');
+
+        $q_item_add_query = "SELECT COUNT(*) as is_there, oi_id from tbl_order_items where oi_order_id = :order_id AND oi_item_id = :item_id";
+        $q_item_add = $app['dbs']['mysql_read']->prepare($q_item_add_query);
+        $q_item_add->bindValue(':order_id', (int)$order_id, PDO::PARAM_INT);
+        $q_item_add->bindValue(':item_id', (int)$item_id, PDO::PARAM_INT);
+        $q_item_add->execute();
+
+        $itemed = $q_item_add->fetch();
+
+        if($itemed['is_there'] == 0){
+            $q_item_add_ = "INSERT INTO tbl_order_items (oi_item_id , oi_amount, oi_price , oi_order_id) VALUES 
+                                                          (:item_id ,
+                                                           :item_count,
+                                                             (SELECT product_base_value FROM tbl_products WHERE product_id = :item_id ),
+                                                              :order_id) ;";
+        }else{
+            if($request->get('update_record') == NULL) {
+                $q_item_add_ = "UPDATE tbl_order_items SET oi_amount = oi_amount + :item_count WHERE oi_id = :oi_id LIMIT 1;";
+                     }else{
+                $q_item_add_ = "UPDATE tbl_order_items SET oi_amount = :item_count WHERE oi_id = :oi_id LIMIT 1;";
+            }
+
+        }
+
+        $q_item_add_run = $app['dbs']['mysql_read']->prepare($q_item_add_);
+        if($itemed['is_there' == 0]) {
+            $q_item_add_run->bindValue(':item_id', $item_id, PDO::PARAM_INT);
+            $q_item_add_run->bindValue(':order_id', $order_id, PDO::PARAM_INT);
+        }
+        $q_item_add_run->bindValue(':item_count', $item_count, PDO::PARAM_INT);
+        $q_item_add_run->bindValue(':oi_id', $itemed['oi_id'], PDO::PARAM_INT);
+        $q_item_add_run->execute();
+
+    }else{
+        return "ERROR : 7763";
+    }
+
+    return "OK".$itemed['oi_id']."/".$item_count."/".$item_id;
+
+})
+    ->bind('zamowienia_add_item')
 ;
 
 $app->get('/pomoc', function () use ($app) {
