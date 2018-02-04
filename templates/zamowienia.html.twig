@@ -101,21 +101,21 @@
                         <fieldset>
 
                             <!-- Form Name -->
-                            <legend>Formularz zamówienia</legend>
+                            <legend id="form_title">Formularz zamówienia</legend>
 
                             <!-- Text input-->
                             <div class="form-group">
-                                <label class="col-md-4 control-label" for="orderform_ownid" >Numer Zamówienia</label>
+                                <label class="col-md-4 control-label" for="order_id" >Numer Zamówienia</label>
                                 <div class="col-md-4">
-                                    <input id="orderform_ownid" disabled="disabled" name="textinput" type="text" placeholder="" class="form-control input-md">
+                                    <input id="order_id" disabled="disabled" name="order_id" type="numer" placeholder="" class="form-control input-md">
                                 </div>
                             </div>
 
                             <!-- Text input-->
                             <div class="form-group">
-                                <label class="col-md-4 control-label" for="orderform_ownid" >Numer Własny</label>
+                                <label class="col-md-4 control-label" for="order_own_id" >Numer Własny</label>
                                 <div class="col-md-4">
-                                    <input id="orderform_ownid" name="textinput" type="text" placeholder="" class="form-control input-md">
+                                    <input id="order_own_id" name="order_own_id" type="text" placeholder="" class="form-control input-md">
                                 </div>
                             </div>
 
@@ -123,7 +123,7 @@
                             <div class="form-group">
                                 <label class="col-md-4 control-label" for="selectbasic">Adres Dostawy</label>
                                 <div class="col-md-4">
-                                    <select id="selectbasic" name="selectbasic" class="form-control">
+                                    <select id="order_address" name="order_address" class="form-control">
                                         {% for location in locations %}
                                             <option value="{{ location.a_id }}">{{ location.a_name }}</option>
                                         {% endfor %}
@@ -216,6 +216,7 @@
 
         $('#neworder').on('show.bs.modal', function (e) {
             $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show",{},function(data,status){$("#zamowienie").html(data)});
+
             //if (!data) return e.preventDefault() // stops modal from being shown
         })
 
@@ -223,7 +224,9 @@
             $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ')
             $.post("https://obslugastacji.ddns.net/index.php/zamowienia_add_item", {
                 item_id: i_id,
-                item_count: i_amount
+                item_count: i_amount,
+                order_own_id: $("#order_own_id").value(),
+                order_address: $("#order_address").value()
             }, function (data, status) {
 
                 setTimeout(function () {
@@ -239,7 +242,9 @@
             $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ')
             $.post("https://obslugastacji.ddns.net/index.php/zamowienia_add_item", {
                 item_id: i_id,
-                remove : i_id
+                remove : i_id,
+                order_own_id: $("#order_own_id").value(),
+                order_address: $("#order_address").value()
             }, function (data, status) {
 
                 setTimeout(function () {

@@ -88,7 +88,7 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
     oi_amount ,
     oi_price ,
     oi_order_id,
-    (SELECT o_c_id from tbl_orders where o_id = :order_id2  ) as order_owner_id,
+    (SELECT o_c_id from tbl_orders where o_id = :order_id  ) as order_owner_id,
     (SELECT o_c_isbasket from tbl_orders where o_id = oi_order_id) as basket,
     (SELECT product_name from tbl_products where product_id = (SELECT product_parent from tbl_products where product_id = tbl_order_items.oi_item_id ) )as product_parent,
     (SELECT concat(product_parent, \" -> \" , product_name)) as product
@@ -97,7 +97,6 @@ FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
 
         $q_ordered_items = $app['dbs']['mysql_read']->prepare($q_ordered_items_sql);
         $q_ordered_items->bindValue(':order_id', $order_id, PDO::PARAM_STR);
-        $q_ordered_items->bindValue(':order_id2', $order_id, PDO::PARAM_STR);
         $q_ordered_items->execute();
 
         $items = $q_ordered_items->fetchAll();
@@ -105,7 +104,7 @@ FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
         assert($customer_id <> $items[0]['order_owner_id'],
             'Sprawdzenie uprawnien : Wykryto probe nieautoryzowanego dostepu klienta o id'.$customer_id.' do zamownienia na koncie innego uzytkownika');
 
-        if($customer_id <> $items[0]['order_owner_id'])
+        if( (count($items) > 0 ) AND ( $customer_id <> $items[0]['order_owner_id'] ))
         {
             return "Nieoczekiwany Błąd A1789";
         }
@@ -147,11 +146,11 @@ $app->get('/zamowienia/{rows}', function ($rows) use ($app) {
       tbl_orders.o_c_id,
       tbl_orders.o_f_id
  
-      from tbl_orders where tbl_orders.o_c_id = :customer_id LIMIT :rows;
+      from tbl_orders where tbl_orders.o_c_id = :customer_id order by o_id DESC LIMIT :rows;
       ";
 
     $q = $app['dbs']['mysql_read']->prepare($sql_zamowienia);
-    $q->bindValue(':customer_id',$customer_id,PDO::PARAM_INT);
+    $q->bindValue(':customer_id',(int) $customer_id,PDO::PARAM_INT);
     $q->bindValue(':rows',(int) $rows,PDO::PARAM_INT);
     $q->execute();
 
@@ -242,9 +241,8 @@ $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
             $q_item_add_ = "DELETE FROM tbl_order_items WHERE oi_id=:oi_id AND oi_order_id = :order_id;";
 
             $q_item_add_run = $app['dbs']['mysql_read']->prepare($q_item_add_);
-            //return "[".$remove."][".$order_id."]";
             $q_item_add_run->bindValue(':oi_id', (int)$remove, PDO::PARAM_INT);
-            $q_item_add->bindValue(':order_id', (int)$order_id, PDO::PARAM_INT);
+            $q_item_add_run->bindValue(':order_id', (int)$order_id, PDO::PARAM_INT);
 
         }else {
 
