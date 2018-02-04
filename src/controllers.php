@@ -182,6 +182,87 @@ $app->get('/zamowienia/{rows}', function ($rows) use ($app) {
 })
     ->bind('zamowienia')
 ;
+$app->post('/zamowienia_save', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        $order_own_id = $request->get('order_own_id');
+        $order_address = $request->get('order_address');
+
+        if( (int) $request->get('state') != NULL) {
+            (int) $request->get('state');
+        }else{
+            $o_c_isbacket = 1;
+        }
+
+        $q_order_update_ = "UPDATE tbl_orders SET o_name = :order_own_id, o_c_id_shipto = :order_address , o_c_isbasket = :o_c_isbasket WHERE o_id = :oi_id AND o_c_id = :customer_id LIMIT 1;";
+        $q_order_update = $app['dbs']['mysql_read']->prepare($q_order_update_);
+
+        $q_order_update->bindValue(':order_own_id', (int) $order_own_id, PDO::PARAM_INT);
+        $q_order_update->bindValue(':order_address', (int) $order_address, PDO::PARAM_INT);
+        $q_order_update->bindValue(':customer_id', (int) $customer_id, PDO::PARAM_INT);
+        $q_order_update->bindValue(':o_c_isbasket', (int) $o_c_isbacket, PDO::PARAM_INT);
+        $q_order_update->execute();
+
+        return "OK";
+
+    }else{
+        return "ERROR 2242";
+    }
+
+})
+    ->bind('zamowienia_save')
+;
+
+$app->post('/zamowienia_save_get', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        $order_own_id = $request->get('order_id');
+
+        $q_order_get_ = "SELECT o_name , o_c_id_shipto from tbl_orders WHERE o_id = :oi_id AND o_c_id = :customer_id LIMIT 1;";
+
+        $q_order_get = $app['dbs']['mysql_read']->prepare($q_order_get_);
+
+        $q_order_get->bindValue(':order_id', (int) $order_id, PDO::PARAM_INT);
+
+        $q_order_get->bindValue(':customer_id', (int) $customer_id, PDO::PARAM_INT);
+        $q_order_get->execute();
+
+        return "OK";
+
+    }else{
+        return "ERROR 2242";
+    }
+
+})
+    ->bind('zamowienia_save')
+;
+
 
 $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
 
@@ -266,7 +347,6 @@ $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
                 }
                 $q_item_add_run = $app['dbs']['mysql_read']->prepare($q_item_add_);
             }
-
 
         $q_item_add_run->bindValue(':item_count', $item_count, PDO::PARAM_INT);
         $q_item_add_run->bindValue(':oi_id', $itemed['oi_id'], PDO::PARAM_INT);

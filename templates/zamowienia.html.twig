@@ -123,7 +123,7 @@
                             <div class="form-group">
                                 <label class="col-md-4 control-label" for="selectbasic">Adres Dostawy</label>
                                 <div class="col-md-4">
-                                    <select id="order_address" name="order_address" class="form-control">
+                                    <select id="order_address" name="order_address" class="form-control" title="">
                                         {% for location in locations %}
                                             <option value="{{ location.a_id }}">{{ location.a_name }}</option>
                                         {% endfor %}
@@ -218,18 +218,19 @@
             $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show",{},function(data,status){$("#zamowienie").html(data)});
 
             //if (!data) return e.preventDefault() // stops modal from being shown
-        })
+        });
 
         function add_order_item(i_id,i_amount) {
-            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ')
+            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
             $.post("https://obslugastacji.ddns.net/index.php/zamowienia_add_item", {
                 item_id: i_id,
-                item_count: i_amount,
-                order_own_id: $("#order_own_id").value(),
-                order_address: $("#order_address").value()
+                item_count: i_amount
             }, function (data, status) {
 
                 setTimeout(function () {
+                    $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show", {}, function (data, status) {
+                        $("#zamowienie").html(data)
+                    });
                     $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show", {}, function (data, status) {
                         $("#zamowienie").html(data)
                     });
@@ -239,12 +240,10 @@
         }
 
         function remove_order_item(i_id){
-            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ')
+            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
             $.post("https://obslugastacji.ddns.net/index.php/zamowienia_add_item", {
                 item_id: i_id,
-                remove : i_id,
-                order_own_id: $("#order_own_id").value(),
-                order_address: $("#order_address").value()
+                remove : i_id
             }, function (data, status) {
 
                 setTimeout(function () {
