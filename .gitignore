@@ -4,6 +4,7 @@ composer.*
 /var/**
 /bin/**
 /config/**
+kopia/**
+/var/**
 *.gz
 *.dist
-kopia/**
