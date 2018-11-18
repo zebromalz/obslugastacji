@@ -1,7 +1,9 @@
-/vendor/*.*
-composer.phar
-composer.lock
-/config/*.*
-/var/*.*
-/bin/*.*
-/config/*.*
+/vendor/**
+composer.*
+/config/**
+/var/**
+/bin/**
+/config/**
+*.gz
+*.dist
+kopia/**

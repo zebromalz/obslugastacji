@@ -215,23 +215,23 @@
         $('#katalog').treed({openedClass:'glyphicon-folder-open', closedClass:'glyphicon-folder-close'});
 
         $('#neworder').on('show.bs.modal', function (e) {
-            $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show",{},function(data,status){$("#zamowienie").html(data)});
+            $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_show",{},function(data,status){$("#zamowienie").html(data)});
 
             //if (!data) return e.preventDefault() // stops modal from being shown
         });
 
         function add_order_item(i_id,i_amount) {
             $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
-            $.post("https://obslugastacji.ddns.net/index.php/zamowienia_add_item", {
+            $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_add_item", {
                 item_id: i_id,
                 item_count: i_amount
             }, function (data, status) {
 
                 setTimeout(function () {
-                    $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show", {}, function (data, status) {
+                    $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_show", {}, function (data, status) {
                         $("#zamowienie").html(data)
                     });
-                    $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show", {}, function (data, status) {
+                    $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_show", {}, function (data, status) {
                         $("#zamowienie").html(data)
                     });
                 }, 100);
@@ -241,13 +241,13 @@
 
         function remove_order_item(i_id){
             $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
-            $.post("https://obslugastacji.ddns.net/index.php/zamowienia_add_item", {
+            $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_add_item", {
                 item_id: i_id,
                 remove : i_id
             }, function (data, status) {
 
                 setTimeout(function () {
-                    $.post("https://obslugastacji.ddns.net/index.php/zamowienia_show", {}, function (data, status) {
+                    $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_show", {}, function (data, status) {
                         $("#zamowienie").html(data)
                     });
                 }, 100);
