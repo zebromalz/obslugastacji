@@ -1,10 +1,11 @@
 /vendor/**
-composer.*
 /config/**
-/var/**
 /bin/**
 /config/**
+**/cache/**
+**/var/**
+**/*.log
 kopia/**
-/var/**
 *.gz
 *.dist
+composer.*
