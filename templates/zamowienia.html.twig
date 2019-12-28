@@ -8,26 +8,54 @@
         </div>
         <div class="panel panel-default">
             <div class="panel-body">
-                <button href="#neworder" type="button" class="btn btn-lg btn-success" data-toggle="modal">Utwórz nowe zamówienie</button>
-                <form class="form-inline">
+                <button href="#neworder" type="button" class="btn btn-lg btn-success" data-toggle="modal">Utwórz nowe
+                    zamówienie
+                </button>
+                <hr>
+                <form id="order-filter" class="form-inline" method="get" action="{{ url('zamowienia') }}">
                     <div class="form-group">
-                        <select class="form-control">
-                            <option value="" selected="selected">Select a State</option>
-                            <option value="AL">Alabama</option>
-                            <option value="WY">Wyoming</option>
+                        Status:
+                        <select name="status[]" class="form-control" multiple="multiple">
+                            {% for status in range(1, 5) %}
+                                <option {{ filter.filters.status is defined and status in filter.filters.status.values ? 'selected="selected"' : '' }}
+                                        value="{{ status }}">{{ status|status }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="form-group">
-                        <select class="form-control">
-                            <option value="" selected="selected">Select a State</option>
-                            <option value="AL">Alabama</option>
-                            <option value="WY">Wyoming</option>
-                        </select>
+                        Numer własny: <input class="form-control" type="text" name="name"
+                                             value="{{ filter.filters.name is defined ? filter.filters.name.value : '' }}">
                     </div>
+                    <div class="form-group">
+                        Data: <input class="form-control" type="date" name="date"
+                                     value="{{ filter.filters.date is defined ? filter.filters.date.value|date('Y-m-d') : '' }}">
+                    </div>
+                    <input id="page" type="hidden" name="offset" value="{{ filter.page }}">
+                    <button class="btn btn-default" type="submit">Szukaj</button>
                 </form>
             </div>
         </div>
         <div class="row">
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    <li class="page-item"><a class="page-link" data-page="1"
+                                             href="javascript:void(0);"><<</a></li>
+                    <li class="page-item"><a class="page-link" data-page="{{ filter.page - 1 }}"
+                                             href="javascript:void(0);"><</a></li>
+                    {% for page in range(filter.page - 3, filter.page + 3) %}
+                        {% if page > 0 and page <= filter.maxPages %}
+                            <li class="page-item {{ page == filter.page ? 'active' : '' }}"><a class="page-link"
+                                                                                               data-page="{{ page }}"
+                                                                                               href="javascript:void(0);">{{ page }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item"><a class="page-link" data-page="{{ filter.page + 1 }}"
+                                             href="javascript:void(0);">></a></li>
+                    <li class="page-item"><a class="page-link" data-page="{{ filter.maxPages }}"
+                                             href="javascript:void(0);">>></a></li>
+                </ul>
+            </nav>
             <table class="table table-striped">
                 <thead>
                 <tr>
@@ -43,23 +71,26 @@
                 <tbody>
 
                 {% for i in orders %}
-                <tr>
-                    <th>{{ i.o_id }}</th>
-                    <th>{{ i.o_name }}</th>
-                    <th>FV/{{ i.o_f_id }}/{{ i.o_datetime| date("Y") }}</th>
-                    <th>{{ i.o_shipto }}</th>
-                    <th>
-                        <span class="label label-success">Opłacone</span>
-                    </th>
-                    <th>
-                        <span class="label label-success">Zrealizowane</span>
-                    </th>
-                    <th>{{ i.o_datetime }}</th>
-                </tr>
+                    <tr>
+                        <td><a href="{{ url('zamowienie_podglad', { "id": i.o_id }) }}">{{ loop.index }}</a></td>
+                        <td>{{ i.o_name }}</td>
+                        <td>FV/{{ i.o_f_id }}/{{ i.o_datetime| date("Y") }}</td>
+                        <td>{{ i.o_shipto }}</td>
+                        <td>
+                            <span class="label label-success">Opłacone</span>
+                        </td>
+                        <td>
+                            {{ i.o_status|status_label|raw }}
+                        </td>
+                        <td>{{ i.o_datetime }}</td>
+                    </tr>
                 {% endfor %}
 
                 </tbody>
             </table>
+            <div class="pull-right">
+                Ilość stron: <b>{{ filter.maxPages }}</b>
+            </div>
         </div>
 
     </div> <!-- /container -->
@@ -97,7 +128,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form class="form-horizontal">
+                    <form id="order-form" class="form-horizontal">
                         <fieldset>
 
                             <!-- Form Name -->
@@ -105,17 +136,19 @@
 
                             <!-- Text input-->
                             <div class="form-group">
-                                <label class="col-md-4 control-label" for="order_id" >Numer Zamówienia</label>
+                                <label class="col-md-4 control-label" for="order_id">Numer Zamówienia</label>
                                 <div class="col-md-4">
-                                    <input id="order_id" disabled="disabled" name="order_id" type="numer" placeholder="" class="form-control input-md">
+                                    <input id="order_id" value="" readonly="readonly" name="order_id" type="number"
+                                           placeholder="" class="form-control input-md">
                                 </div>
                             </div>
 
                             <!-- Text input-->
                             <div class="form-group">
-                                <label class="col-md-4 control-label" for="order_own_id" >Numer Własny</label>
+                                <label class="col-md-4 control-label" for="order_own_id">Numer Własny</label>
                                 <div class="col-md-4">
-                                    <input id="order_own_id" name="order_own_id" type="text" placeholder="" class="form-control input-md">
+                                    <input id="order_own_id" name="order_own_id" type="text" placeholder=""
+                                           class="form-control input-md">
                                 </div>
                             </div>
 
@@ -137,37 +170,40 @@
                                         <li><a href="#">Katalog</a>
 
 
-                                            {%  macro productMacro(array) %}
+                                            {% macro productMacro(array) %}
                                                 {% import _self as pmacro %}
                                                 <ul>
                                                     {% for product in array %}
 
                                                         {% if product.product_is_active %}
-                                                        <li title="{{ product.product_desc }}">
+                                                            <li title="{{ product.product_desc }}">
 
-                                                            {{ product.product_name }}
+                                                                {{ product.product_name }}
 
-                                                            {% if not product.product_is_category %}
+                                                                {% if not product.product_is_category %}
 
-                                                            {{ (product.product_base_value/100)|number_format(2, '.', ',') }} zł / {{ product.product_base_size }}
+                                                                    {{ (product.product_base_value/100)|number_format(2, '.', ',') }} zł / {{ product.product_base_size }}
 
-                                                            <button id="{{ product.product_id }}" type="button" onclick="add_order_item({{ product.product_id }},1)" class="btn btn-xs btn-success">[ dodaj ]</button>
+                                                                    <button id="{{ product.product_id }}" type="button"
+                                                                            onclick="add_order_item({{ product.product_id }},1)"
+                                                                            class="btn btn-xs btn-success">[ dodaj ]
+                                                                    </button>
 
-                                                            {% endif %}
+                                                                {% endif %}
 
-                                                            {% if not product.children|default([]) is empty %}
+                                                                {% if not product.children|default([]) is empty %}
 
-                                                                  {{ pmacro.productMacro(product.children) }}
+                                                                    {{ pmacro.productMacro(product.children) }}
 
-                                                            {% endif %}
-                                                        </li>
+                                                                {% endif %}
+                                                            </li>
                                                         {% endif %}
                                                     {% endfor %}
                                                 </ul>
                                             {% endmacro %}
 
                                             {% import _self as pmacro2 %}
-                                            {{  pmacro2.productMacro(products) }}
+                                            {{ pmacro2.productMacro(products) }}
 
                                         </li>
                                     </ul>
@@ -181,11 +217,11 @@
                                     <thead>
                                     <tr>
                                         <th>LP</th>
-                                        <th>Nazwa</th>
-                                        <th>Cena</th>
-                                        <th>Ilość</th>
-                                        <th>Suma</th>
-                                        <th>Akcja</th>
+                                        <th class="col-md-6">Nazwa</th>
+                                        <th class="col-md-2">Cena</th>
+                                        <th class="col-md-2">Ilość</th>
+                                        <th class="col-md-2">Suma</th>
+                                        <th class="col-md-2">Akcja</th>
                                     </tr>
                                     </thead>
                                     <tbody id="zamowienie">
@@ -199,7 +235,7 @@
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary">Zatwierdź</button>
+                    <button id="order-confirm-btn" type="button" class="btn btn-primary">Zatwierdź</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Anuluj</button>
                 </div>
             </div>
@@ -212,48 +248,92 @@
 {% block scripts %}
     <script src="{{ asset('js/treeview.js') }}"></script>
     <script>
-        $('#katalog').treed({openedClass:'glyphicon-folder-open', closedClass:'glyphicon-folder-close'});
+        $('#katalog').treed({openedClass: 'glyphicon-folder-open', closedClass: 'glyphicon-folder-close'});
 
-        $('#neworder').on('show.bs.modal', function (e) {
-            $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_show",{},function(data,status){$("#zamowienie").html(data)});
+        $('#neworder').on('show.bs.modal', function(e) {
+            $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
+                $("#zamowienie").html(data)
+            });
 
             //if (!data) return e.preventDefault() // stops modal from being shown
         });
 
-        function add_order_item(i_id,i_amount) {
-            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
-            $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_add_item", {
+        $('.page-link').on('click', function() {
+            let page = $(this).data('page');
+            let orderFilter = $('#order-filter');
+
+            orderFilter.find('input#page').val(page);
+            orderFilter.submit();
+        });
+
+        $('#order-confirm-btn').on('click', function() {
+            $.post(
+                "{{ url('zamowienia_save') }}",
+                $('#order-form').serialize()
+            ).done(function(data) {
+                $('#neworder').modal('hide');
+                location.reload();
+            });
+        });
+
+        function add_order_item(i_id, i_amount) {
+            $.post("{{ url('zamowienia_add_item') }}", {
                 item_id: i_id,
-                item_count: i_amount
-            }, function (data, status) {
+                item_count: i_amount,
+                update_record: 1
+            }).done(function(data) {
+                let amountElem = $('#item-amount-' + i_id);
 
-                setTimeout(function () {
-                    $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_show", {}, function (data, status) {
-                        $("#zamowienie").html(data)
-                    });
-                    $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_show", {}, function (data, status) {
-                        $("#zamowienie").html(data)
-                    });
-                }, 100);
-
+                if (amountElem.length > 0) {
+                    let amount = amountElem.val();
+                    amountElem.val(parseInt(amount) + i_amount);
+                    saveOrder();
+                } else {
+                    refreshItems();
+                }
             });
         }
 
-        function remove_order_item(i_id){
-            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
-            $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_add_item", {
+        function remove_order_item(i_id) {
+            $.post("{{ url('zamowienia_add_item') }}", {
                 item_id: i_id,
-                remove : i_id
-            }, function (data, status) {
-
-                setTimeout(function () {
-                    $.post("https://obslugastacji.zebratouch.com/index.php/zamowienia_show", {}, function (data, status) {
+                remove: i_id
+            }, function(data, status) {
+                setTimeout(function() {
+                    $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
                         $("#zamowienie").html(data)
                     });
                 }, 100);
 
             });
 
+        }
+
+        $('#zamowienie').on('focusout', 'input.item-amount', saveOrder);
+
+        function saveOrder() {
+            $('button.save-item-btn').trigger('click');
+        }
+
+        function save_order_item(i_id) {
+            $.post("{{ url('zamowienia_add_item') }}", {
+                item_id: i_id,
+                item_count: $('#item-amount-' + i_id).val()
+            }).done(function(data) {
+                $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
+                    $("#zamowienie").html(data)
+                });
+            });
+        }
+
+        function refreshItems() {
+            $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
+                $("#zamowienie").html(data);
+            });
+        }
+
+        function showLoader() {
+            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
         }
 
     </script>

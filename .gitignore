@@ -9,3 +9,4 @@ kopia/**
 *.gz
 *.dist
 composer.*
+.idea/**

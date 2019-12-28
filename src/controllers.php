@@ -1,10 +1,147 @@
 <?php
 
+use Doctrine\DBAL\Connection;
+use Service\OrdersFilter;
+use Service\StatusService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Service\Helper;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Security\Core\User\User;
+
+/**
+ * @param Connection $connection
+ * @param User $user
+ *
+ * @return object|null
+ * @throws \Doctrine\DBAL\DBALException
+ */
+function getCustomer(Connection $connection, User $user)
+{
+    $customer = null;
+
+    $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+    $stmt = $connection->prepare($q_user);
+    $stmt->execute(['customer_email' => $user->getUsername()]);
+
+    if ($stmt->rowCount() > 0) {
+        $customer = $stmt->fetch(PDO::FETCH_OBJ);
+    }
+
+    return $customer;
+}
+
+/**
+ * @param Connection $connection
+ * @param stdClass $customer
+ *
+ * @return mixed|null
+ * @throws \Doctrine\DBAL\DBALException
+ */
+function getOrderByUser(Connection $connection, \stdClass $customer, int $orderId)
+{
+    $orderSql = <<<SQL
+            SELECT o.o_id, 
+                   o.o_name, 
+                   o.o_datetime, 
+                   o.o_status, 
+                   o.o_f_id, 
+                   o.o_c_id_shipto, 
+                   o.o_c_id, 
+                   o.o_c_isbasket,
+                   a.a_city,
+                   a.a_city,
+                   a.a_country,
+                   a.a_country_code,
+                   a.a_street_address,
+                   a.a_postcode,
+                   a.a_street,
+                   a.a_name
+            FROM tbl_orders o
+            LEFT JOIN tbl_customer_address a ON a.a_id = o.o_c_id_shipto
+            WHERE o.o_c_id = :customer_id
+            AND o.o_id = :order_id
+SQL;
+
+    $stmt = $connection->prepare($orderSql);
+    $stmt->execute(['customer_id' => $customer->c_id, 'order_id' => $orderId]);
+    $order = null;
+
+    if ($stmt->rowCount() > 0) {
+        $order = $stmt->fetch(PDO::FETCH_OBJ);
+    }
+
+    return $order;
+}
+
+/**
+ * @param Connection $connection
+ * @param int $orderId
+ *
+ * @return mixed|null
+ * @throws \Doctrine\DBAL\DBALException
+ */
+function getOrderById(Connection $connection, int $orderId)
+{
+    $orderSql = <<<SQL
+            SELECT o.o_id, 
+                   o.o_name, 
+                   o.o_datetime, 
+                   o.o_status, 
+                   o.o_f_id, 
+                   o.o_c_id_shipto, 
+                   o.o_c_id, 
+                   o.o_c_isbasket,
+                   a.a_city,
+                   a.a_city,
+                   a.a_country,
+                   a.a_country_code,
+                   a.a_street_address,
+                   a.a_postcode,
+                   a.a_street,
+                   a.a_name
+            FROM tbl_orders o
+            LEFT JOIN tbl_customer_address a ON a.a_id = o.o_c_id_shipto
+            WHERE o.o_id = :order_id
+SQL;
+
+    $stmt = $connection->prepare($orderSql);
+    $stmt->execute(['order_id' => $orderId]);
+    $order = null;
+
+    if ($stmt->rowCount() > 0) {
+        $order = $stmt->fetch(PDO::FETCH_OBJ);
+    }
+
+    return $order;
+}
+
+$app->get(
+    '/admin',
+    function () use ($app) {
+        /** @var TokenInterface $token */
+        $token = $app['security.token_storage']->getToken();
+        if (null === $token) {
+            throw new AccessDeniedException();
+        }
+        /** @var User $user */
+        $user = $token->getUser();
+        /** @var Connection $connection */
+        $connection = $app['dbs']['mysql_read'];
+
+        $customer = getCustomer($connection, $user);
+
+        return $app['twig']->render(
+            'admin_panel.html.twig',
+            array(
+                'customer' => $customer->c_id,
+                'customer_name' => $customer->c_name
+            )
+        );
+    }
+)->bind('admin_panel');
 
 $app->get('/', function () use ($app) {
 
@@ -37,6 +174,7 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
 
     if (null !== $token) {
         $user = $token->getUser();
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
 
         $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
 
@@ -51,19 +189,24 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
         // Nie podano id zamowienia , tworzenie nowego lub otwarcie juz rozpoczetego zamowienia.
         if($request->get('order_id') == NULL){
 
-            $q_order_sql = "SELECT Count(*) as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 ;";
+            $q_order_sql = "SELECT COUNT(*) as cc, o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 GROUP BY o_id;";
 
+            /** @var PDOStatement $open_order */
             $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
             $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
             $open_order->execute();
 
-            $order = $open_order->fetch();
+            if ($open_order->rowCount() > 0) {
+                $order = $open_order->fetch();
+            } else {
+                $order['cc'] = 0;
+            }
 
             //return $order['cc']."<=Orders ".$customer_id."<= Customer ".$order['o_id']."<=Order_id";
 
-            assert($order['cc'] > 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
+            assert($order['cc'] <= 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
 
-            if($order['cc'] == 0){
+            if($order['cc'] === 0){
 
                 $app['dbs']['mysql_read']->insert('tbl_orders',array('o_c_id' => $customer_id, 'o_c_isbasket' => 1));
 
@@ -88,12 +231,12 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
     oi_amount ,
     oi_price ,
     oi_order_id,
+       oi_item_id,
     (SELECT o_c_id from tbl_orders where o_id = :order_id  ) as order_owner_id,
     (SELECT o_c_isbasket from tbl_orders where o_id = oi_order_id) as basket,
     (SELECT product_name from tbl_products where product_id = (SELECT product_parent from tbl_products where product_id = tbl_order_items.oi_item_id ) )as product_parent,
     (SELECT concat(product_parent, \" -> \" , product_name)) as product
-    
-FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
+    FROM tbl_order_items where oi_order_id = :order_id;";
 
         $q_ordered_items = $app['dbs']['mysql_read']->prepare($q_ordered_items_sql);
         $q_ordered_items->bindValue(':order_id', $order_id, PDO::PARAM_STR);
@@ -101,15 +244,22 @@ FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
 
         $items = $q_ordered_items->fetchAll();
 
-        assert($customer_id <> $items[0]['order_owner_id'],
-            'Sprawdzenie uprawnien : Wykryto probe nieautoryzowanego dostepu klienta o id'.$customer_id.' do zamownienia na koncie innego uzytkownika');
+        if (!empty($items)) {
+            assert(
+                $customer_id === $items[0]['order_owner_id'] || $isAdmin,
+                'Sprawdzenie uprawnien : Wykryto probe nieautoryzowanego dostepu klienta o id' . $customer_id . ' do zamownienia na koncie innego uzytkownika'
+            );
+        }
 
-        if( (count($items) > 0 ) AND ( $customer_id <> $items[0]['order_owner_id'] ))
-        {
+        if (!$isAdmin && count($items) > 0 && $customer_id <> $items[0]['order_owner_id']) {
             return "Nieoczekiwany Błąd A1789";
         }
 
-        return $app['twig']->render('zamowienia_show.html.twig', array('ordered_items' => $items));
+        return $app['twig']->render('zamowienia_show.html.twig',
+            array(
+                'ordered_items' => $items,
+                'readonly' => $request->get('readonly')
+            ));
     }else{
         return "Nieoczekiwany Błąd A1790";
     }
@@ -118,70 +268,190 @@ FROM obslugastacji.tbl_order_items where oi_order_id = :order_id;";
     ->bind('zamowienia_show')
 ;
 
-$app->get('/zamowienia/{rows}', function ($rows) use ($app) {
+$app->get(
+    '/zamowienie/{id}/show',
+    function ($id) use ($app) {
+        /** @var TokenInterface $token */
+        $token = $app['security.token_storage']->getToken();
+        if (null === $token) {
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException();
+        }
+        /** @var StatusService $statusService */
+        $statusService = $app['service.status'];
 
+        /** @var User $user */
+        $user = $token->getUser();
+        /** @var Connection $connection */
+        $connection = $app['dbs']['mysql_read'];
+
+        $customer = getCustomer($connection, $user);
+
+        $possibleStatus = [];
+        if ($app['security.authorization_checker']->isGranted('ROLE_ADMIN')) {
+            $order = getOrderById($connection, $id);
+            $possibleStatus = $statusService->getPossibleStatusesForOrder($order);
+        } else {
+            $order = getOrderByUser($connection, $customer, $id);
+        }
+
+        if (null === $order) {
+            return new Response('Access Denied', Response::HTTP_FORBIDDEN);
+        }
+
+        return $app['twig']->render(
+            'zamowienie_podglad.html.twig',
+            [
+                'customer_name' => $customer->c_name,
+                'customer' => $customer->c_id,
+                'order' => $order,
+                'possibleStatuses' => $possibleStatus,
+            ]
+        );
+    }
+)->bind('zamowienie_podglad');
+
+$app->post(
+    'zamowienie/status',
+    function (Request $request) use ($app) {
+        /** @var TokenInterface $token */
+        $token = $app['security.token_storage']->getToken();
+        if (null === $token) {
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException();
+        }
+
+        if ($app['security.authorization_checker']->isGranted('ROLE_ADMIN')) {
+            /** @var StatusService $statusService */
+            $statusService = $app['service.status'];
+
+            $orderId = $request->request->get('orderId');
+            $status = $request->request->get('status');
+
+            /** @var Connection $connection */
+            $connection = $app['dbs']['mysql_read'];
+            $order = getOrderById($connection, $orderId);
+
+            /** @var Connection $connection */
+            $connection = $app['dbs']['mysql_read'];
+
+            $possibleStatuses = $statusService->getPossibleStatusesForOrder($order);
+            if (in_array($status, $possibleStatuses)) {
+                $connection->update('tbl_orders', ['o_status' => $status], ['o_id' => $orderId]);
+            }
+
+            return $app->redirect(
+                $app["url_generator"]->generate("zamowienie_podglad", ['id' => $orderId])
+            );
+        } else {
+            return new Response("Access Denied", Response::HTTP_FORBIDDEN);
+        }
+    }
+)->bind('change_status');
+
+$app->get('/zamowienia', function (Request $request) use ($app) {
     $app['monolog']->error('Testing the Monolog logging.');
 
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $queryData = $request->query->all();
+        $offset = $request->query->has('offset') ? $request->query->get('offset') : 1;
+        $filter = new OrdersFilter('tbl_orders', $app['zamowienia.rows']);
+        $filter->bindFilter($queryData);
+        $filter->setPage($offset);
+
         $user = $token->getUser();
 
-    $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+        $q_user = "SELECT c_id , c_name FROM tbl_customers WHERE c_email=:customer_email LIMIT 1;";
 
-    $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
-    $q_customer->bindValue(':customer_email',$user->getUsername(),PDO::PARAM_STR);
-    $q_customer->execute();
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
 
-    $customer = $q_customer->fetch();
+        $customer = $q_customer->fetch();
 
-    $customer_id = $customer['c_id'];
+        $customer_id = $customer['c_id'];
 
-    $sql_zamowienia = "select 
-      tbl_orders.o_id , 
-      tbl_orders.o_name, 
-      tbl_orders.o_datetime ,
-      (SELECT tbl_customer_address.a_name from tbl_customer_address where tbl_customer_address.a_id = o_c_id_shipto ) as  o_shipto,
-      tbl_orders.o_c_id_shipto,
-      (SELECT CONCAT(tbl_customers.c_name, \" \" ,tbl_customers.c_surname) from tbl_customers where tbl_customers.c_id = tbl_orders.o_c_id) as o_customer,
-      tbl_orders.o_c_id,
-      tbl_orders.o_f_id
- 
-      from tbl_orders where tbl_orders.o_c_id = :customer_id order by o_id DESC LIMIT :rows;
-      ";
+        $ordersCountSql = "SELECT COUNT(1) AS cnt FROM tbl_orders";
+        $parameters = [];
 
-    $q = $app['dbs']['mysql_read']->prepare($sql_zamowienia);
-    $q->bindValue(':customer_id',(int) $customer_id,PDO::PARAM_INT);
-    $q->bindValue(':rows',(int) $rows,PDO::PARAM_INT);
-    $q->execute();
+        if (!$isAdmin) {
+            $ordersCountSql .= ' WHERE tbl_orders.o_c_id = :customer_id';
+            $parameters = array_merge($parameters, ['customer_id' => $customer_id]);
+        }
 
-    $orders = $q->fetchAll();
+        if ($filter->getFilters()) {
+            $ordersCountSql .=  ($isAdmin ? ' WHERE ' : ' AND ') . $filter->getSql();
+        }
 
-    $sql_products = "select * from tbl_products";
+        /** @var Connection $db */
+        $db = $app['dbs']['mysql_read'];
+        $stmt = $db->prepare($ordersCountSql);
+        $stmt->execute(array_merge($parameters, $filter->getFilterValues()));
+        $ordersCount = $stmt->fetchColumn();
 
-    $products = buildTree($app['dbs']['mysql_read']->fetchAll($sql_products));
+        $filter->setItemsCount($ordersCount);
 
-    $q_locations = "SELECT a_id , a_name from tbl_customer_address where a_c_id=:customer_id;";
+        $sql_zamowienia = "SELECT 
+          tbl_orders.o_id , 
+          tbl_orders.o_name, 
+          tbl_orders.o_datetime ,
+          tbl_orders.o_status ,
+          (SELECT tbl_customer_address.a_name FROM tbl_customer_address WHERE tbl_customer_address.a_id = o_c_id_shipto ) AS  o_shipto,
+          tbl_orders.o_c_id_shipto,
+          (SELECT CONCAT(tbl_customers.c_name, \" \" ,tbl_customers.c_surname) FROM tbl_customers WHERE tbl_customers.c_id = tbl_orders.o_c_id) AS o_customer,
+          tbl_orders.o_c_id,
+          tbl_orders.o_f_id
+          FROM tbl_orders";
 
-    $q_locations = $app['dbs']['mysql_read']->prepare($q_locations);
-    $q_locations->bindValue(':customer_id',$customer_id,PDO::PARAM_INT);
-    $q_locations->execute();
+        if (!$isAdmin) {
+            $sql_zamowienia .= ' WHERE tbl_orders.o_c_id = :customer_id';
+        }
 
-    $locations = $q_locations->fetchAll();
+        if ($filter->getFilters()) {
+            $sql_zamowienia .=  ($isAdmin ? ' WHERE ' : ' AND ') . $filter->getSql();
+        }
 
-    return $app['twig']->render('zamowienia.html.twig', array(
-        'orders' => $orders ,
-        'products' => $products ,
-        'customer' => $customer_id ,
-        'customer_name' => $customer['c_name'],
-        'locations' => $locations
+        $sql_zamowienia .= $filter->getLimitSql();
 
-        ));
-    }else{
+        /** @var \Doctrine\DBAL\Statement $q */
+        $q = $app['dbs']['mysql_read']->prepare($sql_zamowienia);
+        $q->execute(
+            array_merge(
+                $parameters,
+                $filter->getFilterValues()
+            )
+        );
+
+        $orders = $q->fetchAll();
+
+        $sql_products = "SELECT * FROM tbl_products";
+
+        $products = Helper::buildTree($app['dbs']['mysql_read']->fetchAll($sql_products));
+
+        $q_locations = "SELECT a_id , a_name FROM tbl_customer_address WHERE a_c_id=:customer_id;";
+
+        $q_locations = $app['dbs']['mysql_read']->prepare($q_locations);
+        $q_locations->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $q_locations->execute();
+
+        $locations = $q_locations->fetchAll();
+
+        return $app['twig']->render(
+            'zamowienia.html.twig',
+            array(
+                'orders' => $orders,
+                'products' => $products,
+                'customer' => $customer_id,
+                'customer_name' => $customer['c_name'],
+                'locations' => $locations,
+                'filter' => $filter
+            )
+        );
+    } else {
         return "ERROR MISSING USER ID";
     }
-})
-    ->bind('zamowienia')
-;
+})->bind('zamowienia');
+
 $app->post('/zamowienia_save', function (Request $request) use ($app) {
 
     $token = $app['security.token_storage']->getToken();
@@ -198,22 +468,39 @@ $app->post('/zamowienia_save', function (Request $request) use ($app) {
 
         $customer_id = $customer['c_id'];
 
+        $q_order_sql = "SELECT o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1";
+
+        /** @var \Doctrine\DBAL\Statement $open_order */
+        $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
+        $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
+        $open_order->execute();
+        $orderId = 0;
+
+        if ($open_order->rowCount() > 0) {
+            $orderObject = $open_order->fetch(PDO::FETCH_OBJ);
+            $orderId = $orderObject->o_id;
+        }
+
+        assert($orderId !== 0, 'Invalid order id');
+
         $order_own_id = $request->get('order_own_id');
         $order_address = $request->get('order_address');
 
-        if( (int) $request->get('state') != NULL) {
-            (int) $request->get('state');
+
+        if($request->get('state') !== NULL) {
+            $state = (int) $request->get('state');
         }else{
-            $o_c_isbacket = 1;
+            $o_c_isbacket = 0;
         }
 
-        $q_order_update_ = "UPDATE tbl_orders SET o_name = :order_own_id, o_c_id_shipto = :order_address , o_c_isbasket = :o_c_isbasket WHERE o_id = :oi_id AND o_c_id = :customer_id LIMIT 1;";
+        $q_order_update_ = "UPDATE tbl_orders SET o_name = :order_own_id, o_c_id_shipto = :order_address , o_c_isbasket = :o_c_isbasket, o_status = 1 WHERE o_id = :oi_id AND o_c_id = :customer_id LIMIT 1;";
         $q_order_update = $app['dbs']['mysql_read']->prepare($q_order_update_);
 
-        $q_order_update->bindValue(':order_own_id', (int) $order_own_id, PDO::PARAM_INT);
+        $q_order_update->bindValue(':order_own_id', $order_own_id, PDO::PARAM_STR);
         $q_order_update->bindValue(':order_address', (int) $order_address, PDO::PARAM_INT);
         $q_order_update->bindValue(':customer_id', (int) $customer_id, PDO::PARAM_INT);
         $q_order_update->bindValue(':o_c_isbasket', (int) $o_c_isbacket, PDO::PARAM_INT);
+        $q_order_update->bindValue(':oi_id', (int) $orderId, PDO::PARAM_INT);
         $q_order_update->execute();
 
         return "OK";
@@ -242,7 +529,7 @@ $app->post('/zamowienia_save_get', function (Request $request) use ($app) {
 
         $customer_id = $customer['c_id'];
 
-        $order_own_id = $request->get('order_id');
+        $order_id = $request->get('order_id');
 
         $q_order_get_ = "SELECT o_name , o_c_id_shipto from tbl_orders WHERE o_id = :oi_id AND o_c_id = :customer_id LIMIT 1;";
 
@@ -260,7 +547,7 @@ $app->post('/zamowienia_save_get', function (Request $request) use ($app) {
     }
 
 })
-    ->bind('zamowienia_save')
+    ->bind('zamowienia_save_get')
 ;
 
 
@@ -280,15 +567,20 @@ $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
 
         $customer_id = $customer['c_id'];
 
-        $q_order_sql = "SELECT Count(*) as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 ;";
+        $q_order_sql = "SELECT Count(*) as cc , o_id from tbl_orders where o_c_id = :c_id and o_c_isbasket = 1 GROUP BY o_id;";
 
+        /** @var PDOStatement $open_order */
         $open_order = $app['dbs']['mysql_read']->prepare($q_order_sql);
         $open_order->bindValue(':c_id', $customer_id, PDO::PARAM_STR);
         $open_order->execute();
 
-        $order = $open_order->fetch();
+        if ($open_order->rowCount() > 0) {
+            $order = $open_order->fetch();
+        } else {
+            $order['cc'] = 0;
+        }
 
-        assert($order['cc'] > 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
+        assert($order['cc'] <= 1, "Sprawdzenie ilosci otwartych zamownien : Uszkodzenie struktury zamowien klienta o ".$customer_id.", wiecej niz jedno otwarte zamowienie");
 
         if($order['cc'] == 0){
 
@@ -308,7 +600,7 @@ $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
         $item_id = $request->get('item_id');
         $item_count = $request->get('item_count');
 
-        $q_item_add_query = "SELECT COUNT(*) as is_there, oi_id from tbl_order_items where oi_order_id = :order_id AND oi_item_id = :item_id;";
+        $q_item_add_query = "SELECT COUNT(*) as is_there, oi_id from tbl_order_items where oi_order_id = :order_id AND oi_item_id = :item_id GROUP BY oi_id;";
         $q_item_add = $app['dbs']['mysql_read']->prepare($q_item_add_query);
         $q_item_add->bindValue(':order_id', (int)$order_id, PDO::PARAM_INT);
         $q_item_add->bindValue(':item_id', (int)$item_id, PDO::PARAM_INT);
@@ -326,7 +618,8 @@ $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
             $q_item_add_run->bindValue(':order_id', (int)$order_id, PDO::PARAM_INT);
 
         }else {
-
+//            var_dump($itemed);
+//            exit;
             if ($itemed['is_there'] == 0) {
                 $q_item_add_ = "INSERT INTO tbl_order_items (oi_item_id , oi_amount, oi_price , oi_order_id) VALUES 
                                                           (:item_id ,
@@ -338,7 +631,7 @@ $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
                 $q_item_add_run->bindValue(':order_id', $order_id, PDO::PARAM_INT);
                 $message = "INSERT";
             } else {
-                if ($request->get('update_record') == NULL) {
+                if ($request->get('update_record') !== null) {
                     $q_item_add_ = "UPDATE tbl_order_items SET oi_amount = oi_amount + :item_count WHERE oi_id = :oi_id LIMIT 1;";
                     $message = "UPDATE ADD";
                 } else {

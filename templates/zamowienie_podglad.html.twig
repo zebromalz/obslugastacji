@@ -1,0 +1,70 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+    <div class="container theme-showcase" role="main">
+
+        <div class="page-header">
+            <h3>Zamówienie</h3>
+        </div>
+        <div class="row">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ order.o_status|status_label|raw }}
+                        {{ order.o_name }} |
+                        {{ order.a_street }}
+                        {{ order.a_street_address }}
+                        {{ order.a_postcode }}
+                        {{ order.a_city }}
+                        {{ order.a_country }}
+                        <span class="label label-default">{{ order.a_country_code }}</span>
+                    </h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ order.o_datetime }}</h6>
+                    <div class="card-text">
+                        {% if is_granted('ROLE_ADMIN') and possibleStatuses|length > 0 %}
+                            <form class="form-inline" action="{{ url('change_status') }}" method="post">
+                                <div class="form-group mb-2">
+                                    Akcje:
+                                </div>
+                                <input type="hidden" name="orderId" value="{{ order.o_id }}">
+                                {% for status in possibleStatuses %}
+                                    <div class="form-group mb-2">
+                                        <button name="status" type="submit" class="btn btn-default"
+                                                value="{{ status }}">{{ status|status }}</button>
+                                    </div>
+                                {% endfor %}
+                            </form>
+                        {% endif %}
+                        <table class="table table-condensed table-hover">
+                            <thead>
+                            <tr>
+                                <th>LP</th>
+                                <th class="col-md-6">Nazwa</th>
+                                <th class="col-md-2">Cena</th>
+                                <th class="col-md-2">Ilość</th>
+                                <th class="col-md-2">Suma</th>
+                                <th class="hidden"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="zamowienie">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script>
+        (function() {
+            $(function() {
+                $.post("{{ url('zamowienia_show') }}", {
+                    order_id: '{{ order.o_id }}',
+                    readonly: true
+                }, function(data, status) {
+                    $(".card-text table tbody").html(data);
+                });
+            });
+        })();
+    </script>
+{% endblock %}
