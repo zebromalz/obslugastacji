@@ -349,7 +349,7 @@ $app->post(
 )->bind('change_status');
 
 $app->get('/uzytkownicy', function (Request $request) use ($app) {
-    $app['monolog']->error('Testing the Monolog logging.');
+    
 
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
@@ -390,9 +390,6 @@ $app->get('/uzytkownicy', function (Request $request) use ($app) {
         $stmt->execute(array_merge($parameters, $filter->getFilterValues()));
         $usersCount = $stmt->fetchColumn();
         $filter->setItemsCount($usersCount);
-        $app['monolog']->error("UsersCount -> $usersCount");
-        $app['monolog']->error("UsersPage -> $filter->page");
-
         $sql_uzytkownicy = "SELECT 
           c_id ,
           c_name,
@@ -441,7 +438,7 @@ $app->get('/uzytkownicy', function (Request $request) use ($app) {
 })->bind('uzytkownicy');
 
 $app->get('/zamowienia', function (Request $request) use ($app) {
-    $app['monolog']->error('Testing the Monolog logging.');
+    
 
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
@@ -700,7 +697,6 @@ $app->post('/zamowienia_add_item', function (Request $request) use ($app) {
         $q_item_add->execute();
 
         $itemed = $q_item_add->fetch();
-        $app['monolog']->info('Testing the Monolog logging.');
         if(($remove = $request->get('remove')) != NULL )
         {
             $message = "REMOVE";
