@@ -45,6 +45,7 @@ abstract class FilterService
         $this->alias = $alias;
         $this->perPage = $perPage;
         $this->page = 1;
+        $this->idField = 'id';
     }
 
     abstract protected function getFilterFields(): array;
@@ -83,7 +84,10 @@ abstract class FilterService
      */
     public function getMaxPages(): int
     {
-        return $this->maxPages;
+        if ( ! is_null($this->MaxPages) )
+            return $this->maxPages;
+        else 
+            return 0;
     }
 
     /**
@@ -199,7 +203,7 @@ abstract class FilterService
         }
 
         $result[] = implode(' AND ', $filters);
-        $result[] = 'ORDER BY o_id DESC';
+        $result[] = 'ORDER BY '.$this->idField.' DESC';
 
         return implode(' ', $result);
     }
