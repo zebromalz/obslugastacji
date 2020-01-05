@@ -4,35 +4,48 @@
     <div class="container theme-showcase" role="main">
 
         <div class="page-header">
-            <h1>Zamówienia</h1>
+            <h1>Użytkownicy</h1>
         </div>
         <div class="panel panel-default">
             <div class="panel-body">
-                <button href="#neworder" type="button" class="btn btn-lg btn-success" data-toggle="modal">Utwórz nowe
-                    zamówienie
+                <button href="#newuser" type="button" class="btn btn-lg btn-success" data-toggle="modal">
+                Utwórz nowego użytkownika
                 </button>
                 <hr>
-                <form id="order-filter" class="form-inline" method="get" action="{{ url('zamowienia') }}">
+                <form id="order-filter" class="form-inline" method="get" action="{{ url('uzytkownicy') }}">
                     <div class="form-group">
-                        Status:
-                        <select name="status[]" class="form-control" multiple="multiple">
-                            {% for status in range(1, 5) %}
-                                <option {{ filter.filters.status is defined and status in filter.filters.status.values ? 'selected="selected"' : '' }}
-                                        value="{{ status }}">{{ status|status }}</option>
+                        Aktywny:
+                        <select name="active[]" class="form-control" multiple="multiple">
+                            {% for status in range(0, 1) %}
+                                <option {{ filter.filters.active is defined and status in filter.filters.active.values ? 'selected="selected"' : '' }}
+                                        value="{{ status }}">{{ status|status_active }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="form-group">
-                        Numer własny: <input class="form-control" type="text" name="name"
+                        Zablokowany:
+                        <select name="locked[]" class="form-control" multiple="multiple">
+                            {% for status in range(0, 1) %}
+                                <option {{ filter.filters.locked is defined and status in filter.filters.locked.values ? 'selected="selected"' : '' }}
+                                        value="{{ status }}">{{ status|status_locked }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        Imie: <input class="form-control" type="text" name="name"
                                              value="{{ filter.filters.name is defined ? filter.filters.name.value : '' }}">
                     </div>
                     <div class="form-group">
-                        Numer faktury: <input class="form-control" type="text" name="invoice"
-                                             value="{{ filter.filters.invoice is defined ? filter.filters.invoice.value : '' }}">
+                        Nazwisko: <input class="form-control" type="text" name="surname"
+                                             value="{{ filter.filters.surname is defined ? filter.filters.surname.value : '' }}">
                     </div>
                     <div class="form-group">
-                        Data: <input class="form-control" type="date" name="date"
-                                     value="{{ filter.filters.date is defined ? filter.filters.date.value|date('Y-m-d') : '' }}">
+                        Email: <input class="form-control" type="text" name="email"
+                                             value="{{ filter.filters.email is defined ? filter.filters.email.value : '' }}">
+                    </div>
+                    <div class="form-group">
+                        Data: <input class="form-control" type="date" name="registered"
+                                     value="{{ filter.filters.registered is defined ? filter.filters.registered.value|date('Y-m-d') : '' }}">
                     </div>
                     <input id="page" type="hidden" name="offset" value="{{ filter.page }}">
                     <button class="btn btn-default" type="submit">Szukaj</button>
@@ -64,29 +77,24 @@
                 <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Numer Własny</th>
-                    <th>Numer Faktury</th>
-                    <th>Adres Dostawy</th>
-                    <th>Status Platnosci</th>
-                    <th>Status Zamowienia</th>
+                    <th>Imie Nazwisko / Firma </th>
+                    <th>Status</th>
+                    <th>Uprawnienia</th>
                     <th>Data Utworzenia</th>
                 </tr>
                 </thead>
                 <tbody>
 
-                {% for i in orders %}
+                {% for i in users %}
                     <tr>
-                        <td><a href="{{ url('zamowienie_podglad', { "id": i.o_id }) }}">{{ loop.index + (filter.page-1)*filter.perPage }}</a></td>
-                        <td>{{ i.o_name }}</td>
-                        <td>FV/{{ i.o_f_id }}/{{ i.o_datetime| date("Y") }}</td>
-                        <td>{{ i.o_shipto }}</td>
+                        <td><a href="{{ url('zamowienie_podglad', { "id": i.c_id }) }}">{{ loop.index + (filter.page-1)*filter.perPage }}</a></td>
+                        <td>{{ i.c_name }} {{ i.c_surname }}</td>
                         <td>
-                            <span class="label label-success">Opłacone</span>
+                            {{ i.c_isactive|status_active_label|raw }}
+                            {{ i.c_islocked|status_locked_label|raw }}
                         </td>
-                        <td>
-                            {{ i.o_status|status_label|raw }}
-                        </td>
-                        <td>{{ i.o_datetime }}</td>
+                        <td>{{ i.c_roles }}</td>
+                        <td>{{ i.c_registered }}</td>
                     </tr>
                 {% endfor %}
 
@@ -121,12 +129,12 @@
     </div>
     <!-- /Modal Platnosci -->
 
-    <!-- /Modal Nowego Zamowienia -->
-    <div id="neworder" class="modal" tabindex="-1" role="dialog">
+    <!-- /Modal Nowego Użykownika -->
+    <div id="newuser" class="modal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Utwórz nowe zamówienie.</h5>
+                    <h5 class="modal-title">Utwórz nowego uzytkownika.</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -136,7 +144,7 @@
                         <fieldset>
 
                             <!-- Form Name -->
-                            <legend id="form_title">Formularz zamówienia</legend>
+                            <legend id="form_title">Formularz nowego użykownika</legend>
 
                             <!-- Text input-->
                             <div class="form-group">
@@ -254,7 +262,7 @@
     <script>
         $('#katalog').treed({openedClass: 'glyphicon-folder-open', closedClass: 'glyphicon-folder-close'});
 
-        $('#neworder').on('show.bs.modal', function(e) {
+        $('#newuser').on('show.bs.modal', function(e) {
             $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
                 $("#zamowienie").html(data)
             });
@@ -275,7 +283,7 @@
                 "{{ url('zamowienia_save') }}",
                 $('#order-form').serialize()
             ).done(function(data) {
-                $('#neworder').modal('hide');
+                $('#newuser').modal('hide');
                 location.reload();
             });
         });

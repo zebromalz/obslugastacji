@@ -19,19 +19,19 @@ abstract class FilterService
     /**
      * @var int
      */
-    private $page;
+    public $page;
     /**
      * @var int
      */
-    private $perPage;
+    public $perPage;
     /**
      * @var int
      */
-    private $maxPages;
+    public $maxPages;
     /**
      * @var int
      */
-    private $itemsCount;
+    public $itemsCount;
 
     /**
      * FilterService constructor.
