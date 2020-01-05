@@ -27,6 +27,10 @@
                                              value="{{ filter.filters.name is defined ? filter.filters.name.value : '' }}">
                     </div>
                     <div class="form-group">
+                        Numer faktury: <input class="form-control" type="text" name="invoice"
+                                             value="{{ filter.filters.invoice is defined ? filter.filters.invoice.value : '' }}">
+                    </div>
+                    <div class="form-group">
                         Data: <input class="form-control" type="date" name="date"
                                      value="{{ filter.filters.date is defined ? filter.filters.date.value|date('Y-m-d') : '' }}">
                     </div>
