@@ -62,7 +62,6 @@
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     {% if is_granted('IS_AUTHENTICATED_FULLY') %}
-                    <li><a href="#glowna">Strona główna</a></li>
                     <li class="active"><a href="{{ app.url_generator.generate('zamowienia', {'rows' : rows } ) }}">Zamówienia</a></li>
                     <li class="dropdown">
                         <a href="{{ app.url_generator.generate('konto')}}" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Konto<span class="caret"></span></a>
@@ -72,6 +71,15 @@
                         </ul>
                     </li>
                     <li><a href="{{ app.url_generator.generate('pomoc')}}">Pomoc</a></li>
+                    {% if is_granted('ROLE_ADMIN') %}
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">System<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{{ app.url_generator.generate('uzytkownicy', {'rows' : rows } ) }}">Użytkownicy</a></li>
+                            <li><a href="{{ app.url_generator.generate('uzytkownicy', {'rows' : rows } ) }}">Produkty</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
                     <li><a href="{{ path('logout') }}">Wyloguj ( {{ customer }} {{ customer_name }} )</a></li>
                     {% else %}
                     <li><a href="{{ app.url_generator.generate('login')}}">Logowanie</a></li>
