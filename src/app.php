@@ -127,7 +127,53 @@ $app['twig'] = $app->extend(
 
                 return null;
         }));
+        /** @var Twig_Environment $twig */
+        $twig->addFilter(
+            new Twig_Filter('status_locked_label', function (int $status = null) {
+                switch ($status) {
+                    case 0:
+                        return '';
+                    case 1:
+                        return '<span class="label label-danger">Zablokowany</span>';
+                }
 
+                return null;
+        }));
+        $twig->addFilter(
+            new Twig_Filter('status_locked', function (int $status = null) {
+                switch ($status) {
+                    case 0:
+                        return 'Nie Zablokowany';
+                    case 1:
+                        return 'Zablokowany';
+                }
+
+                return null;
+        }));
+        /** @var Twig_Environment $twig */
+        $twig->addFilter(
+            new Twig_Filter('status_active_label', function (int $status = null) {
+                switch ($status) {
+                    case 0:
+                        return '<span class="label label-default">Nie Aktywny</span>';
+                    case 1:
+                        return '<span class="label label-success">Aktywny</span>';
+                }
+
+                return null;
+        }));
+        /** @var Twig_Environment $twig */
+        $twig->addFilter(
+            new Twig_Filter('status_active', function (int $status = null) {
+                switch ($status) {
+                    case 0:
+                        return 'Nie Aktywny';
+                    case 1:
+                        return 'Aktywny';
+                }
+
+                return null;
+        }));
         $twig->addFilter(
             new Twig_Filter('status', function (int $status = null) {
                 switch ($status) {

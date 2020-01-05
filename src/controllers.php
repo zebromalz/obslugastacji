@@ -2,6 +2,7 @@
 
 use Doctrine\DBAL\Connection;
 use Service\OrdersFilter;
+use Service\UsersFilter;
 use Service\StatusService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -346,6 +347,109 @@ $app->post(
         }
     }
 )->bind('change_status');
+
+$app->get('/uzytkownicy', function (Request $request) use ($app) {
+    $app['monolog']->error('Testing the Monolog logging.');
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $queryData = $request->query->all();
+        $offset = $request->query->has('offset') ? $request->query->get('offset') : 1;
+        #$filter = new OrdersFilter('tbl_orders', $app['zamowienia.rows']);
+        $filter = new UsersFilter('tbl_customers', $app['user.rows']);
+        $filter->bindFilter($queryData);
+        $filter->setPage($offset);
+
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name FROM tbl_customers WHERE c_email=:customer_email LIMIT 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        $usersCountSql = "SELECT COUNT(1) AS cnt FROM tbl_customers";
+        $parameters = [];
+
+        #if (!$isAdmin) {
+        #    $ordersCountSql .= ' WHERE tbl_orders.o_c_id = :customer_id';
+        #    $parameters = array_merge($parameters, ['customer_id' => $customer_id]);
+        #}
+
+        if ($filter->getFilters()) {
+            $ordersCountSql .=  ($isAdmin ? ' WHERE ' : ' AND ') . $filter->getSql();
+        }
+
+        /** @var Connection $db */
+        $db = $app['dbs']['mysql_read'];
+        $stmt = $db->prepare($usersCountSql);
+        $stmt->execute(array_merge($parameters, $filter->getFilterValues()));
+        $usersCount = $stmt->fetchColumn();
+
+        #$filter->setItemsCount($ordersCount);
+
+        $sql_uzytkownicy = "SELECT 
+          tbl_customers.c_id ,
+          tbl_customers.c_name,
+          tbl_customers.c_surname,
+          tbl_customers.c_email,
+          tbl_customers.c_registered,
+          tbl_customers.c_islocked,
+          tbl_customers.c_isactive,
+          tbl_customers.c_roles
+          FROM tbl_customers";
+
+        if (!$isAdmin) {
+            $sql_uzytkownicy .= ' WHERE tbl_customers.c_id = :customer_id';
+        }
+
+        if ($filter->getFilters()) {
+            $sql_uzytkownicy .=  ($isAdmin ? ' WHERE ' : ' AND ') . $filter->getSql();
+        }
+
+        $sql_uzytkownicy .= $filter->getLimitSql();
+
+        /** @var \Doctrine\DBAL\Statement $q */
+        $q = $app['dbs']['mysql_read']->prepare($sql_uzytkownicy);
+        $q->execute(
+            array_merge(
+                $parameters,
+                $filter->getFilterValues()
+            )
+        );
+
+        $users = $q->fetchAll();
+        #$sql_products = "SELECT * FROM tbl_products";
+
+        #$products = Helper::buildTree($app['dbs']['mysql_read']->fetchAll($sql_products));
+
+        $q_locations = [];
+        #$q_locations = "SELECT a_id , a_name FROM tbl_customer_address WHERE a_c_id=:customer_id;";
+        #$q_locations = [[$app['dbs']['mysql_read']->prepare($q_locations);
+        #$q_locations->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        #$q_locations->execute();
+        #$locations = $q_locations->fetchAll();]]
+
+        return $app['twig']->render(
+            'uzytkownicy.html.twig',
+            array(
+                'users' => $users,
+                'products' => $products,
+                'customer' => $customer_id,
+                'customer_name' => $customer['c_name'],
+                'locations' => $locations,
+                'filter' => $filter
+            )
+        );
+    } else {
+        return "ERROR MISSING USER ID";
+    }
+})->bind('uzytkownicy');
 
 $app->get('/zamowienia', function (Request $request) use ($app) {
     $app['monolog']->error('Testing the Monolog logging.');

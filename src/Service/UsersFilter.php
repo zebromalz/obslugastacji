@@ -4,23 +4,24 @@ namespace Service;
 
 use Model\Sql\DateType;
 use Model\Sql\InType;
-use Model\Sql\IntType;
 use Model\Sql\LikeType;
 use Model\Sql\StringType;
 
-class OrdersFilter extends FilterService
+class UsersFilter extends FilterService
 {
     const FILTER_FIELDS = [
-        'status' => 'o_status',
-        'name' => 'o_name',
-        'date' => 'o_datetime',
-        'invoice' => 'o_f_id' 
+        'locked' => 'c_islocked',
+        'active' => 'c_isactive',
+        'name' => 'c_name',
+        'surname' => 'c_surname',
+        'registered' => 'c_registered',
+        'email' => 'c_email'
     ];
 
     public function __construct(string $alias, int $perPage)
     {
         parent::__construct($alias, $perPage);
-        $this->idField = 'o_id';
+        $this->idField = 'c_id';
     }
 
     /**
@@ -38,15 +39,21 @@ class OrdersFilter extends FilterService
                     case 'name':
                         $this->filters[$key] = new LikeType($filter);
                         break;
-                    case 'invoice':
-                        $this->filters[$key] = new IntType($filter);
+                    case 'surname':
+                            $this->filters[$key] = new LikeType($filter);
                         break;
-                    case 'status':
+                    case 'active':
+                            $this->filters[$key] = new InType($filter);
+                        break;
+                    case 'locked':
                         $this->filters[$key] = new InType($filter);
                         break;
-                    case 'date':
+                    case 'registered':
                         $this->filters[$key] = new DateType(new \DateTime($filter));
                         break;
+                    case 'email':
+                        $this->filters[$key] = new LikeType($filter);
+                        break;    
                     default:
                         continue;
                 }
@@ -75,25 +82,53 @@ class OrdersFilter extends FilterService
 
         return null;
     }
-
-    /**
-     * @return int|null
+        /**
+     * @return string|null
      */
-    public function getStatus()
+    public function getSurname()
     {
-        if (isset($this->filters[self::FILTER_FIELDS['status']])) {
-            /** @var StrictType $type */
-            $type = $this->filters[self::FILTER_FIELDS['status']];
+        if (isset($this->filters[self::FILTER_FIELDS['surname']])) {
+            /** @var LikeType $type */
+            $type = $this->filters[self::FILTER_FIELDS['surname']];
             $type->getValue();
         }
 
         return null;
     }
-    public function getInvoice()
+        /**
+     * @return string|null
+     */
+    public function getEmail()
     {
-        if (isset($this->filters[self::FILTER_FIELDS['invoice']])) {
+        if (isset($this->filters[self::FILTER_FIELDS['email']])) {
+            /** @var LikeType $type */
+            $type = $this->filters[self::FILTER_FIELDS['email']];
+            $type->getValue();
+        }
+
+        return null;
+    }
+    /**
+     * @return int|null
+     */
+    public function getLocked()
+    {
+        if (isset($this->filters[self::FILTER_FIELDS['locked']])) {
             /** @var StrictType $type */
-            $type = $this->filters[self::FILTER_FIELDS['invoice']];
+            $type = $this->filters[self::FILTER_FIELDS['locked']];
+            $type->getValue();
+        }
+
+        return null;
+    }
+        /**
+     * @return int|null
+     */
+    public function getActive()
+    {
+        if (isset($this->filters[self::FILTER_FIELDS['active']])) {
+            /** @var StrictType $type */
+            $type = $this->filters[self::FILTER_FIELDS['active']];
             $type->getValue();
         }
 
