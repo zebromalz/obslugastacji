@@ -155,13 +155,13 @@
                         <th>{{ a.a_name }}</th>
                         <th>
                             {% if a.a_active == 1  %}
-                                <a href="{{ app.url_generator.generate('kontodane_block_address', {'address_id' : a.a_id })}}"><span class="label label-danger">[ Usuń ]</span></a>
+                                <a href="{{ app.url_generator.generate('kontodane_block_address', {'address_id' : a.a_id, 'user_id': customer })}}"><span class="label label-danger">[ Usuń ]</span></a>
                             {% endif %}
                         </th>
                         <th>
                         <th>
                             {% if a.a_active == 1  %}
-                                <a href="{{ app.url_generator.generate('kontodane_edit_address_', {'address_id' : a.a_id}) }}"><span class="label label-success">[ Edytuj ]</span></a>
+                                <a href="{{ app.url_generator.generate('kontodane_edit_address_', {'address_id' : a.a_id, 'user_id': customer}) }}"><span class="label label-success">[ Edytuj ]</span></a>
                             {% endif %}
                         </th>
                         </th>

@@ -76,7 +76,7 @@
             <table class="table table-striped">
                 <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>LP</th>
                     <th>Imie Nazwisko / Firma </th>
                     <th>Status</th>
                     <th>Uprawnienia</th>
@@ -87,7 +87,7 @@
 
                 {% for i in users %}
                     <tr>
-                        <td><a href="{{ url('zamowienie_podglad', { "id": i.c_id }) }}">{{ loop.index + (filter.page-1)*filter.perPage }}</a></td>
+                        <td><a href="{{ url('uzytkownicy_podglad', { "user_id": i.c_id }) }}">{{ loop.index + (filter.page-1)*filter.perPage }}</a></td>
                         <td>{{ i.c_name }} {{ i.c_surname }}</td>
                         <td>
                             {{ i.c_isactive|status_active_label|raw }}
