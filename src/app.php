@@ -155,9 +155,9 @@ $app['twig'] = $app->extend(
             new Twig_Filter('status_active_label', function (int $status = null) {
                 switch ($status) {
                     case 0:
-                        return '<span class="label label-default">Nie Aktywny</span>';
+                        return '<span class="label label-default">Nie Aktywowany</span>';
                     case 1:
-                        return '<span class="label label-success">Aktywny</span>';
+                        return '<span class="label label-success">Aktywowany</span>';
                 }
 
                 return null;
@@ -167,9 +167,9 @@ $app['twig'] = $app->extend(
             new Twig_Filter('status_active', function (int $status = null) {
                 switch ($status) {
                     case 0:
-                        return 'Nie Aktywny';
+                        return 'Nie Aktywowany';
                     case 1:
-                        return 'Aktywny';
+                        return 'Aktywowany';
                 }
 
                 return null;

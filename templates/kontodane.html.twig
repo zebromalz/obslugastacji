@@ -1,11 +1,64 @@
 {% extends "layout.html.twig" %}
+{% set user_id = customer|default('') %}
 
 {% block content %}
 
     <div class="row">
         <div class="col-md-1"></div>
         <div class="col-md-4">
+    
     <div class="panel panel-info">
+        {% if user is defined %}
+        {% set user_id = user["c_id"] %}
+        <div class="row"></div>
+        <div class="panel-heading">Dane Klienta</div>
+        <div class="card">
+                <div class="card-body">
+                    <h4>{{ user['c_name'] }} {{ user['c_surname'] }} <span class="label label-info">{{ user['c_roles'] }}</span></h4>
+                    <h5 class="card-title"> {{ user['c_islocked']|status_locked_label|raw }} {{ user['c_isactive']|status_active_label|raw }} 
+                    </h5>
+                    
+                    <div class="card-text">
+                        {% if is_granted('ROLE_ADMIN') and possibleStatusesLock|length > 0 %}
+                            <form class="form-inline" action="{{ url('change_status') }}" method="post">
+                                <div class="form-group mb-2">
+                                    Zmień Status na :
+                                </div>
+                                
+                                {% for status in possibleStatusesLock %}
+                                    <div class="form-group mb-2">
+                                        <button name="user_islocked" type="submit" class="btn btn-default"
+                                                value="{{ user['c_islocked'] }}">{{ status|status_locked }}</button>
+                                    </div>
+                                {% endfor %}
+                                {% for status in possibleStatusesActive %}
+                                    <div class="form-group mb-2">
+                                        <button name="user_isactive" type="submit" class="btn btn-default"
+                                                value="{{ user['c_isactive'] }}">{{ status|status_active }}</button>
+                                    </div>
+                                {% endfor %}
+                                <input type="hidden" name="user_id" value="{{ user['c_id'] }}">
+                            </form>
+                        {% endif %}
+                        <table class="table table-condensed table-hover">
+                            <thead>
+                            <tr>
+                                <th class="col-md-6">Data Rejestracji</th>
+                                <th class="col-md-6">Kod Aktywacji</th>
+                                <th class="hidden"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="zamowienie3">
+                                <td>{{ user['c_registered']|date("Y-m-d H:i:s") }}</td>
+                                <td>{{ user['c_activationcode'] }}</td>
+                                <td></td>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+        {% endif %}
         <div class="panel-heading">Dane Klienta</div>
 
         {% for i in kontodane %}
@@ -31,7 +84,7 @@
                         <button type="submit" class="btn btn-default"> Zapisz
                         </button>
                     </div>
-
+                <input type="hidden" name="user_id" value="{{ user_id }}">
             </form>
 
         {% endfor %}
@@ -74,7 +127,7 @@
                     </th>
                     <th>
                     {% if i.card_active == 1  %}
-                        <a href="{{ app.url_generator.generate('kontodane_block_card', {'card_id' : i.card_id })}}"><span class="label label-danger">[ Dezaktywuj ]</span></a>
+                        <a href="{{ app.url_generator.generate('kontodane_block_card', {'card_id' : i.card_id, 'user_id': user_id }) }}"><span class="label label-danger">[ Dezaktywuj ]</span></a>
                     {% endif %}
                     </th>
                     </tr>
@@ -118,7 +171,7 @@
                 <div class="text-center">
                     <button type="submit" class="btn btn-default"> Zapisz </button>
                 </div>
-
+                <input type="hidden" name="user_id" value="{{ user_id }}">
             </form>
 
         </div>
@@ -140,7 +193,7 @@
                     <th>Ulica</th>
                     <th>Ulica Adres</th>
                     <th>Nazwa</th>
-                    <th><a href="{{ app.url_generator.generate('kontodane_edit_address_', {'address_id' : 0 }) }}"><span class="label label-success">[ Dodaj ]</span></a></th>
+                    <th><a href="{{ app.url_generator.generate('kontodane_edit_address_', {'address_id' : 0, 'user_id': user_id }) }}"><span class="label label-success">[ Dodaj ]</span></a></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -155,13 +208,13 @@
                         <th>{{ a.a_name }}</th>
                         <th>
                             {% if a.a_active == 1  %}
-                                <a href="{{ app.url_generator.generate('kontodane_block_address', {'address_id' : a.a_id, 'user_id': customer })}}"><span class="label label-danger">[ Usuń ]</span></a>
+                                <a href="{{ app.url_generator.generate('kontodane_block_address', {'address_id' : a.a_id, 'user_id': user_id })}}"><span class="label label-danger">[ Usuń ]</span></a>
                             {% endif %}
                         </th>
                         <th>
                         <th>
                             {% if a.a_active == 1  %}
-                                <a href="{{ app.url_generator.generate('kontodane_edit_address_', {'address_id' : a.a_id, 'user_id': customer}) }}"><span class="label label-success">[ Edytuj ]</span></a>
+                                <a href="{{ app.url_generator.generate('kontodane_edit_address_', {'address_id' : a.a_id, 'user_id': user_id }) }}"><span class="label label-success">[ Edytuj ]</span></a>
                             {% endif %}
                         </th>
                         </th>

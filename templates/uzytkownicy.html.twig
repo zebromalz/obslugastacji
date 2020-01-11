@@ -87,14 +87,14 @@
 
                 {% for i in users %}
                     <tr>
-                        <td><a href="{{ url('uzytkownicy_podglad', { "user_id": i.c_id }) }}">{{ loop.index + (filter.page-1)*filter.perPage }}</a></td>
+                        <td><a href="{{ url('kontodane_admin', { "user_id": i.c_id }) }}">{{ loop.index + (filter.page-1)*filter.perPage }}</a></td>
                         <td>{{ i.c_name }} {{ i.c_surname }}</td>
                         <td>
                             {{ i.c_isactive|status_active_label|raw }}
                             {{ i.c_islocked|status_locked_label|raw }}
                         </td>
                         <td>{{ i.c_roles }}</td>
-                        <td>{{ i.c_registered }}</td>
+                        <td>{{ i.c_registered |date("Y-m-d H:i:s") }}</td>
                     </tr>
                 {% endfor %}
 

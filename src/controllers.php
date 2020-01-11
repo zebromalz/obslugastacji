@@ -45,7 +45,7 @@ function getCustomer(Connection $connection, User $user)
 function getCustomerId(Connection $connection, User $user, int $user_id, bool $isAdmin)
 {
     
-    if($isAdmin){
+    if($isAdmin && $user_id <> -1){
         $q_user = "SELECT c_id , c_name from tbl_customers where c_id=:customer_id limit 1;";
         $q_customer = $connection->prepare($q_user);
         $q_customer->bindValue(':customer_id', $user_id, PDO::PARAM_STR);
@@ -198,14 +198,14 @@ SQL;
 
     $stmt = $connection->prepare($userSql);
     $stmt->execute(['user_id' => $userId]);
-    $order = null;
+    $user = null;
     
 
     if ($stmt->rowCount() > 0) {
-        $order = $stmt->fetch(PDO::FETCH_OBJ);
+        $user = $stmt->fetch(PDO::FETCH_OBJ);
     }
 
-    return $order;
+    return $user;
 }
 
 $app->get(
@@ -430,6 +430,53 @@ $app->post(
 
             return $app->redirect(
                 $app["url_generator"]->generate("zamowienie_podglad", ['id' => $orderId])
+            );
+        } else {
+            return new Response("Access Denied", Response::HTTP_FORBIDDEN);
+        }
+    }
+)->bind('change_status');
+
+$app->post(
+    'uzytkownik/status',
+    function (Request $request) use ($app) {
+        /** @var TokenInterface $token */
+        $token = $app['security.token_storage']->getToken();
+        if (null === $token) {
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException();
+        }
+
+        if ($app['security.authorization_checker']->isGranted('ROLE_ADMIN')) {
+            /** @var StatusService $statusService */
+            $statusService = $app['service.status'];
+
+            $user_isactive = $request->request->get('user_isactive');
+            $user_islocked = $request->request->get('user_islocked');
+            $user_id = $request->request->get('user_id');
+
+            /** @var Connection $connection */
+            $connection = $app['dbs']['mysql_read'];
+            $user = getUserById($connection, $user_id);
+
+            /** @var Connection $connection */
+            $connection = $app['dbs']['mysql_read'];
+
+            $possiblestatusesLock = $statusService->getPossibleStatusesForUserLock($user);
+            $possiblestatusesActivation = $statusService->getPossibleStatusesForUserActivation($user);
+            #TODO:REPAIR STATUS UPDATE OF LOCK AND ACTIVATED
+            $app['monolog']->error("UserActive/Locked/userid $user_isactive/$user_islocked/$user_id");
+
+            if (in_array($user_isactive, $possiblestatusesActivation)) {
+                $connection->update('tbl_customers', ['c_isactive' => $user_isactive], ['c_id' => $user_id]);
+                $app['monolog']->error("ACTIVATION ".$user['c_isactive']."/$user_isactive");
+            }
+            if (in_array($user_islocked, $possiblestatusesLock)) {
+                $connection->update('tbl_customers', ['c_islocked' => $user_islocked], ['c_id' => $user_id]);
+
+            }
+
+            return $app->redirect(
+                $app["url_generator"]->generate("kontodane_admin", ['user_id' => $user_id])
             );
         } else {
             return new Response("Access Denied", Response::HTTP_FORBIDDEN);
@@ -950,9 +997,11 @@ $app->get('/kontodane_admin/{user_id}/show', function ($user_id) use ($app) {
         $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
         $connection = $app['dbs']['mysql_read'];
         $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $user_id , $isAdmin);
+        $logged_in_id = getCustomerId($app['dbs']['mysql_read'], $user, -1 , $isAdmin);
+        $logged_in = getCustomerbyId($connection, $logged_in_id);
 
-        $app['monolog']->error("User_id $user_id.");
-        $app['monolog']->error("Customer_id $customer_id.");
+        $app['monolog']->info("User_id $user_id.");
+        $app['monolog']->info("Customer_id $customer_id.");
 
         $sql_kontodane = "select c_id,c_name,c_surname,c_phone,c_email,c_registered,c_islocked,c_isactive from tbl_customers where c_id = :customer_id LIMIT 1;";
 
@@ -972,28 +1021,57 @@ $app->get('/kontodane_admin/{user_id}/show', function ($user_id) use ($app) {
         $q_address->bindValue(':customer_id', $user_id, PDO::PARAM_INT);
         $q_address->execute();
 
-        return $app['twig']->render('kontodane.html.twig', array('kontodane' => $q_kontodane, 'cards' => $q_cards, 'address' => $q_address,'customer' => $customer_id , 'customer_name' => $customer['c_name']));
+        /** @var StatusService $statusService */
+        $statusService = $app['service.status'];
+
+        /** @var User $user */
+        $user = $token->getUser();
+        /** @var Connection $connection */
+        $connection = $app['dbs']['mysql_read'];
+
+        $customer = getCustomerbyId($connection, $user_id);
+
+        $possibleStatusLocked = [];
+        $possibleStatusActive = [];
+        if ($app['security.authorization_checker']->isGranted('ROLE_ADMIN')) {
+            $user_query = getUserById($connection, $user_id);
+            $possibleStatusLocked = $statusService->getPossibleStatusesForUserLock($user_query);
+            $possibleStatusActive = $statusService->getPossibleStatusesForUserActivation($user_query);
+        } else {
+            $user_query = null;
+        }
+
+        if (null === $user_query) {
+            return new Response('Access Denied', Response::HTTP_FORBIDDEN);
+        }
+
+        return $app['twig']->render('kontodane.html.twig', 
+            [
+                'kontodane' => $q_kontodane,
+                'cards' => $q_cards,
+                'address' => $q_address,
+                'customer' => $logged_in_id,
+                'customer_name' => $logged_in['c_name'],
+                'user' => $customer,
+                'possibleStatusesLock' => $possibleStatusLocked,
+                'possibleStatusesActive' => $possibleStatusActive,
+            ]
+        );
     }else{
         return "ERROR MISSING USER ID";
     }
 })
     ->bind('kontodane_admin')
 ;
-$app->get('/kontodane_block_card/{card_id}', function ($card_id) use ($app) {
+$app->get('/kontodane_block_card/{card_id}/{user_id}', function ($card_id,$user_id) use ($app) {
 
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
         $user = $token->getUser();
-
-        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
-
-        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
-        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
-        $q_customer->execute();
-
-        $customer = $q_customer->fetch();
-
-        $customer_id = $customer['c_id'];
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $connection = $app['dbs']['mysql_read'];
+        $app['monolog']->error("Customer_id $user_id/$card_id");
+        $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $user_id , $isAdmin);
 
         $q_card_update = "UPDATE tbl_cards SET card_active = 0 where card_user = :customer_id AND card_id = :card_id LIMIT 1;";
 
@@ -1019,9 +1097,7 @@ $app->get('/kontodane_block_address/{address_id}/{user_id}', function ($address_
         $connection = $app['dbs']['mysql_read'];     
         $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $user_id , $isAdmin);
         
-        #$app['monolog']->error("Customer_id $customer_id");
         #$app['monolog']->error("Address_id $address_id");
-                   
 
         $q_address_update = "UPDATE tbl_customer_address SET a_active = 0 where a_c_id = :customer_id AND a_id = :address_id LIMIT 1;";
 
@@ -1038,21 +1114,16 @@ $app->get('/kontodane_block_address/{address_id}/{user_id}', function ($address_
     ->bind('kontodane_block_address')
 ;
 
-$app->get('/kontodane_edit_address_/{address_id}', function ($address_id) use ($app) {
+$app->get('/kontodane_edit_address_/{address_id}/{user_id}', function ($address_id,$user_id) use ($app) {
 
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
         $user = $token->getUser();
-
-        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
-
-        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
-        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
-        $q_customer->execute();
-
-        $customer = $q_customer->fetch();
-
-        $customer_id = $customer['c_id'];
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $connection = $app['dbs']['mysql_read'];     
+        $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $user_id , $isAdmin);
+        $logged_in_id = getCustomerId($app['dbs']['mysql_read'], $user, -1 , $isAdmin);
+        $logged_in = getCustomerbyId($connection, $logged_in_id);
 
         if($address_id > 0) {
             $q_address_query = "SELECT * FROM tbl_customer_address where a_id = :address_id AND a_c_id = :customer_id  LIMIT 1;";
@@ -1082,7 +1153,14 @@ $app->get('/kontodane_edit_address_/{address_id}', function ($address_id) use ($
     }else{
         return "ERROR MISSING USER ID";
     }
-    return $app['twig']->render('kontodane_edit_address.html.twig', array('address' => $q_address_query,'customer' => $customer_id));
+    return $app['twig']->render('kontodane_edit_address.html.twig', 
+        [
+        'address' => $q_address_query,
+        'user_id' => $customer_id,
+        'customer' => $logged_in_id,
+        'customer_name' => $logged_in['c_name'],
+        ]
+    );
 
 })
     ->bind('kontodane_edit_address_')
@@ -1093,16 +1171,9 @@ $app->post('/kontodane_edit_address', function (Request $request) use ($app) {
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
         $user = $token->getUser();
-
-        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
-
-        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
-        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
-        $q_customer->execute();
-
-        $customer = $q_customer->fetch();
-
-        $customer_id = $customer['c_id'];
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $connection = $app['dbs']['mysql_read'];     
+        $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $request->get('user_id') , $isAdmin);
 
         if($request->get('a_id') == 0) {
             $q_address_query = "INSERT INTO tbl_customer_address (a_city , a_postcode , a_street , a_street_address , a_name , a_c_id ) VALUES 
@@ -1135,6 +1206,7 @@ $app->post('/kontodane_edit_address', function (Request $request) use ($app) {
     }else{
         return "ERROR MISSING USER ID";
     }
+    #TODO:ADD_RETUR_TO_ADMIN
     return $app->redirect($app['url_generator']->generate('kontodane'));
 
 })
@@ -1145,19 +1217,10 @@ $app->post('/kontodane_change_pass', function (Request $request) use ($app) {
 
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
-        
-        #if()
         $user = $token->getUser();
-
-        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
-
-        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
-        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
-        $q_customer->execute();
-
-        $customer = $q_customer->fetch();
-
-        $customer_id = $customer['c_id'];
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $connection = $app['dbs']['mysql_read'];     
+        $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $request->get('user_id') , $isAdmin);
 
         $encoder = $app['security.encoder_factory']->getEncoder($user);
 
@@ -1191,16 +1254,9 @@ $app->post('/kontodane_edit_user', function (Request $request) use ($app) {
     $token = $app['security.token_storage']->getToken();
     if (null !== $token) {
         $user = $token->getUser();
-
-        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
-
-        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
-        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
-        $q_customer->execute();
-
-        $customer = $q_customer->fetch();
-
-        $customer_id = $customer['c_id'];
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $connection = $app['dbs']['mysql_read'];     
+        $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $request->get('user_id') , $isAdmin);
 
         $q_user_update = "UPDATE tbl_customers 
                                                SET c_name = :customer_name,
