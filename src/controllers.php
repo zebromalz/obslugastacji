@@ -463,16 +463,16 @@ $app->post(
 
             $possiblestatusesLock = $statusService->getPossibleStatusesForUserLock($user);
             $possiblestatusesActivation = $statusService->getPossibleStatusesForUserActivation($user);
-            #TODO:REPAIR STATUS UPDATE OF LOCK AND ACTIVATED
-            $app['monolog']->error("UserActive/Locked/userid $user_isactive/$user_islocked/$user_id");
+            
+            $app['monolog']->error("UserActive/Locked/userid[nullActive][nullLocked] $user_isactive/$user_islocked/$user_id [".empty($user_isactive)."][".empty($user_locked)."]");
 
-            if (in_array($user_isactive, $possiblestatusesActivation)) {
+            if (!is_null($user_isactive) && in_array($user_isactive, $possiblestatusesActivation)) {
                 $connection->update('tbl_customers', ['c_isactive' => $user_isactive], ['c_id' => $user_id]);
-                $app['monolog']->error("ACTIVATION ".$user['c_isactive']."/$user_isactive");
+                $app['monolog']->info("LOCK ".$user->c_isactive."/$user_isactive");
             }
-            if (in_array($user_islocked, $possiblestatusesLock)) {
+            if ( !is_null($user_islocked) && in_array($user_islocked, $possiblestatusesLock)) {
                 $connection->update('tbl_customers', ['c_islocked' => $user_islocked], ['c_id' => $user_id]);
-
+                $app['monolog']->info("ACTIVATION ".$user->c_islocked."/$user_islocked");
             }
 
             return $app->redirect(

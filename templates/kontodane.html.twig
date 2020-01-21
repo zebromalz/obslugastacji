@@ -25,16 +25,16 @@
                                     Zmień Status na :
                                 </div>
                                 
-                                {% for status in possibleStatusesLock %}
+                                {% for next_status_lock in possibleStatusesLock %}
                                     <div class="form-group mb-2">
                                         <button name="user_islocked" type="submit" class="btn btn-default"
-                                                value="{{ user['c_islocked'] }}">{{ status|status_locked }}</button>
+                                                value="{{ next_status_lock }}">{{ next_status_lock|status_locked }}</button>
                                     </div>
                                 {% endfor %}
-                                {% for status in possibleStatusesActive %}
+                                {% for next_status_active in possibleStatusesActive %}
                                     <div class="form-group mb-2">
                                         <button name="user_isactive" type="submit" class="btn btn-default"
-                                                value="{{ user['c_isactive'] }}">{{ status|status_active }}</button>
+                                                value="{{ next_status_active }}">{{ next_status_active|status_active }}</button>
                                     </div>
                                 {% endfor %}
                                 <input type="hidden" name="user_id" value="{{ user['c_id'] }}">
