@@ -463,7 +463,7 @@ $app->post(
 
             $possiblestatusesLock = $statusService->getPossibleStatusesForUserLock($user);
             $possiblestatusesActivation = $statusService->getPossibleStatusesForUserActivation($user);
-            
+
             $app['monolog']->error("UserActive/Locked/userid[nullActive][nullLocked] $user_isactive/$user_islocked/$user_id [".empty($user_isactive)."][".empty($user_locked)."]");
 
             if (!is_null($user_isactive) && in_array($user_isactive, $possiblestatusesActivation)) {
@@ -1072,7 +1072,9 @@ $app->get('/kontodane_block_card/{card_id}/{user_id}', function ($card_id,$user_
         $connection = $app['dbs']['mysql_read'];
         $app['monolog']->error("Customer_id $user_id/$card_id");
         $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $user_id , $isAdmin);
-
+        if($isAdmin){
+            $logged_in_id = getCustomerId($app['dbs']['mysql_read'], $user, -1 , $isAdmin);
+        }
         $q_card_update = "UPDATE tbl_cards SET card_active = 0 where card_user = :customer_id AND card_id = :card_id LIMIT 1;";
 
         $q_card_update = $app['dbs']['mysql_read']->prepare($q_card_update);
@@ -1083,7 +1085,11 @@ $app->get('/kontodane_block_card/{card_id}/{user_id}', function ($card_id,$user_
     }else{
         return "ERROR MISSING USER ID";
     }
-    return $app->redirect($app['url_generator']->generate('kontodane'));
+    if($isAdmin && ($logged_in_id <> $customer_id)){
+        return $app->redirect($app['url_generator']->generate('kontodane_admin', array('user_id' => $customer_id )));
+    }else{
+        return $app->redirect($app['url_generator']->generate('kontodane'));
+    }
 })
     ->bind('kontodane_block_card')
 ;
@@ -1096,7 +1102,9 @@ $app->get('/kontodane_block_address/{address_id}/{user_id}', function ($address_
         $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
         $connection = $app['dbs']['mysql_read'];     
         $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $user_id , $isAdmin);
-        
+        if($isAdmin){
+            $logged_in_id = getCustomerId($app['dbs']['mysql_read'], $user, -1 , $isAdmin);
+        }
         #$app['monolog']->error("Address_id $address_id");
 
         $q_address_update = "UPDATE tbl_customer_address SET a_active = 0 where a_c_id = :customer_id AND a_id = :address_id LIMIT 1;";
@@ -1109,7 +1117,11 @@ $app->get('/kontodane_block_address/{address_id}/{user_id}', function ($address_
     }else{
         return "ERROR MISSING USER ID";
     }
-    return $app->redirect($app['url_generator']->generate('kontodane'));
+    if($isAdmin && ($logged_in_id <> $customer_id)){
+        return $app->redirect($app['url_generator']->generate('kontodane_admin', array('user_id' => $customer_id )));
+    }else{
+        return $app->redirect($app['url_generator']->generate('kontodane'));
+    }
 })
     ->bind('kontodane_block_address')
 ;
@@ -1174,6 +1186,9 @@ $app->post('/kontodane_edit_address', function (Request $request) use ($app) {
         $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
         $connection = $app['dbs']['mysql_read'];     
         $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $request->get('user_id') , $isAdmin);
+        if($isAdmin){
+            $logged_in_id = getCustomerId($app['dbs']['mysql_read'], $user, -1 , $isAdmin);
+        }
 
         if($request->get('a_id') == 0) {
             $q_address_query = "INSERT INTO tbl_customer_address (a_city , a_postcode , a_street , a_street_address , a_name , a_c_id ) VALUES 
@@ -1206,8 +1221,11 @@ $app->post('/kontodane_edit_address', function (Request $request) use ($app) {
     }else{
         return "ERROR MISSING USER ID";
     }
-    #TODO:ADD_RETUR_TO_ADMIN
-    return $app->redirect($app['url_generator']->generate('kontodane'));
+    if($isAdmin && ($logged_in_id <> $customer_id)){
+        return $app->redirect($app['url_generator']->generate('kontodane_admin', array('user_id' => $customer_id )));
+    }else{
+        return $app->redirect($app['url_generator']->generate('kontodane'));
+    }
 
 })
     ->bind('kontodane_edit_address')
@@ -1221,7 +1239,9 @@ $app->post('/kontodane_change_pass', function (Request $request) use ($app) {
         $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
         $connection = $app['dbs']['mysql_read'];     
         $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $request->get('user_id') , $isAdmin);
-
+        if($isAdmin){
+            $logged_in_id = getCustomerId($app['dbs']['mysql_read'], $user, -1 , $isAdmin);
+        }
         $encoder = $app['security.encoder_factory']->getEncoder($user);
 
         //$pass_current = $encoder->encodePassword($request->get('pass_current'), $user->getSalt());
@@ -1244,7 +1264,12 @@ $app->post('/kontodane_change_pass', function (Request $request) use ($app) {
     }else{
         return "ERROR MISSING USER ID";
     }
-    return $app->redirect($app['url_generator']->generate('kontodane'));
+    if($isAdmin && ($logged_in_id <> $customer_id)){
+        return $app->redirect($app['url_generator']->generate('kontodane_admin', array('user_id' => $customer_id )));
+    }else{
+        return $app->redirect($app['url_generator']->generate('kontodane'));
+    }
+    
 })
     ->bind('kontodane_change_pass')
 ;
@@ -1257,7 +1282,9 @@ $app->post('/kontodane_edit_user', function (Request $request) use ($app) {
         $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
         $connection = $app['dbs']['mysql_read'];     
         $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, $request->get('user_id') , $isAdmin);
-
+        if($isAdmin){
+            $logged_in_id = getCustomerId($app['dbs']['mysql_read'], $user, -1 , $isAdmin);
+        }
         $q_user_update = "UPDATE tbl_customers 
                                                SET c_name = :customer_name,
                                                    c_surname = :customer_surname ,
@@ -1277,7 +1304,11 @@ $app->post('/kontodane_edit_user', function (Request $request) use ($app) {
     }else{
         return "ERROR MISSING USER ID";
     }
-    return $app->redirect($app['url_generator']->generate('kontodane'));
+    if($isAdmin && ($logged_in_id <> $customer_id)){
+        return $app->redirect($app['url_generator']->generate('kontodane_admin', array('user_id' => $customer_id )));
+    }else{
+        return $app->redirect($app['url_generator']->generate('kontodane'));
+    }
 })
     ->bind('kontodane_edit_user')
 ;
