@@ -11,6 +11,15 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\User\User;
 
+function generateRandomString($length = 6) {
+    $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+    return $randomString;
+}
 /**
  * @param Connection $connection
  * @param User $user
@@ -561,10 +570,8 @@ $app->get('/uzytkownicy', function (Request $request) use ($app) {
             'uzytkownicy.html.twig',
             array(
                 'users' => $users,
-                'products' => $products,
                 'customer' => $customer_id,
                 'customer_name' => $customer['c_name'],
-                'locations' => $locations,
                 'filter' => $filter
             )
         );
@@ -723,6 +730,121 @@ $app->get('/zamowienia', function (Request $request) use ($app) {
     }
 })->bind('zamowienia');
 
+$app->get('/after_login', function (Request $request) use ($app) {
+    
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $queryData = $request->query->all();
+        $offset = $request->query->has('offset') ? $request->query->get('offset') : 1;
+        $filter = new OrdersFilter('tbl_orders', $app['zamowienia.rows']);
+        $filter->bindFilter($queryData);
+        $filter->setPage($offset);
+
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name , c_isactive FROM tbl_customers WHERE c_email=:customer_email LIMIT 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+        $customer_activated = $customer['c_isactive'];
+
+        if($customer_activated){
+            return $app->redirect($app['url_generator']->generate('zamowienia'));
+        }else{
+            return $app->redirect($app['url_generator']->generate('activate_form'));
+        }
+        
+    } else {
+        return "ERROR MISSING USER ID";
+    }
+})->bind('after_login');
+
+$app->get('/activate_form', function (Request $request) use ($app) {
+    
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $queryData = $request->query->all();
+        $offset = $request->query->has('offset') ? $request->query->get('offset') : 1;
+        $filter = new OrdersFilter('tbl_orders', $app['zamowienia.rows']);
+        $filter->bindFilter($queryData);
+        $filter->setPage($offset);
+
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name , c_isactive , c_activationcode FROM tbl_customers WHERE c_email=:customer_email LIMIT 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+        $customer_activated = $customer['c_isactive'];
+
+        if($customer_activated){
+            return $app->redirect($app['url_generator']->generate('zamowienia'));
+        }else{
+            return $app['twig']->render('activate_form.html.twig', array('customer' => $customer_id , 'customer_name' => $customer['c_name']));
+        }
+        
+    } else {
+        return "ERROR MISSING USER ID";
+    }
+})->bind('activate_form');
+
+$app->post('/activate', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $connection = $app['dbs']['mysql_read'];     
+        $customer_id = getCustomerId($app['dbs']['mysql_read'], $user, -1 , false);
+
+        $q_user = "SELECT c_id , c_name, c_activationcode from tbl_customers where c_id=:customer_id limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_id', $customer_id, PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+        $activation_code_sent = $request->get('activation_code');
+        $activation_code_user = $customer['c_activationcode'];
+        if(strcasecmp($activation_code_sent,$activation_code_user) == 0){
+            $q_user_activate = "UPDATE tbl_customers SET c_isactive = 1 where c_id = :customer_id;";
+            $q_user_activate = $app['dbs']['mysql_read']->prepare($q_user_activate);
+            $q_user_activate->bindValue(':customer_id', $customer_id, PDO::PARAM_STR);
+            $q_user_activate->execute();
+            return $app->redirect($app['url_generator']->generate('zamowienia'));
+        }else{
+            return $app['twig']->render('activate_form.html.twig', array('customer' => $customer_id , 'customer_name' => $customer['c_name'], 'activate_error' => "true"));
+        }
+
+        
+
+    }else{
+        return "ERROR MISSING USER ID";
+    }
+    if($isAdmin && ($logged_in_id <> $customer_id)){
+        return $app->redirect($app['url_generator']->generate('kontodane_admin', array('user_id' => $customer_id )));
+    }else{
+        return $app->redirect($app['url_generator']->generate('kontodane'));
+    }
+    
+})
+    ->bind('activate')
+;
+
 $app->post('/zamowienia_save', function (Request $request) use ($app) {
 
     $token = $app['security.token_storage']->getToken();
@@ -782,6 +904,44 @@ $app->post('/zamowienia_save', function (Request $request) use ($app) {
 
 })
     ->bind('zamowienia_save')
+;
+
+$app->post('/user_save', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $user = $token->getUser();
+        
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+
+        if($isAdmin){
+            $q_user_insert_ = "INSERT INTO tbl_customers VALUES(NULL,:c_name,:c_surname,:c_secret,:c_phone,:c_email, NOW() ,0,0,:c_activation_code,:c_roles);";
+            $q_user_insert = $app['dbs']['mysql_read']->prepare($q_user_insert_);
+
+            #Defaults to 'foo' for testing purponses
+            $password_secret = '$2y$10$3i9/lVd8UOFIJ6PAMFt8gu3/r5g0qeCJvoSlLCsvMTythye19F77a';
+            $activation_code = generateRandomString();
+            
+            $q_user_insert->bindValue(':c_name', $request->get('c_name'), PDO::PARAM_STR);
+            $q_user_insert->bindValue(':c_surname', $request->get('c_surname'), PDO::PARAM_STR);
+            $q_user_insert->bindValue(':c_secret', $password_secret, PDO::PARAM_STR);
+            $q_user_insert->bindValue(':c_phone', $request->get('c_phone'), PDO::PARAM_STR);
+            $q_user_insert->bindValue(':c_email', $request->get('c_email'), PDO::PARAM_STR);
+            $q_user_insert->bindValue(':c_activation_code', $activation_code, PDO::PARAM_STR);
+            $q_user_insert->bindValue(':c_roles', $request->get('c_roles'), PDO::PARAM_STR);
+            $q_user_insert->execute();
+        }else{
+            return "ERROR 6755";
+        }
+
+        return "OK";
+
+    }else{
+        return "ERROR 2242";
+    }
+
+})
+    ->bind('user_save')
 ;
 
 $app->post('/zamowienia_save_get', function (Request $request) use ($app) {

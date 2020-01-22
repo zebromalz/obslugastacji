@@ -140,7 +140,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="order-form" class="form-horizontal">
+                    <form id="user-form" class="form-horizontal">
                         <fieldset>
 
                             <!-- Form Name -->
@@ -148,98 +148,49 @@
 
                             <!-- Text input-->
                             <div class="form-group">
-                                <label class="col-md-4 control-label" for="order_id">Numer Zamówienia</label>
+                                <label class="col-md-4 control-label" for="c_name">Imie</label>
                                 <div class="col-md-4">
-                                    <input id="order_id" value="" readonly="readonly" name="order_id" type="number"
-                                           placeholder="" class="form-control input-md">
+                                    <input id="c_name" value="" name="c_name" type="string"
+                                           placeholder="" class="form-control required="" input-md">
                                 </div>
                             </div>
 
                             <!-- Text input-->
                             <div class="form-group">
-                                <label class="col-md-4 control-label" for="order_own_id">Numer Własny</label>
+                                <label class="col-md-4 control-label" for="c_surname">Nazwisko</label>
                                 <div class="col-md-4">
-                                    <input id="order_own_id" name="order_own_id" type="text" placeholder=""
-                                           class="form-control input-md">
+                                    <input id="c_surname" value="" name="c_surname" type="string"
+                                           placeholder="" class="form-control required="" input-md">
+                                </div>
+                            </div>
+
+                            <!-- Text input-->
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="c_phone">Telefon</label>
+                                <div class="col-md-4">
+                                    <input id="c_phone" value="" name="c_phone" type="string"
+                                           placeholder="" class="form-control required="" input-md">
+                                </div>
+                            </div>
+
+                            <!-- Text input-->
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="c_email">Email</label>
+                                <div class="col-md-4">
+                                    <input id="c_email" value="" name="c_email" type="email"
+                                           placeholder="" class="form-control required="" input-md">
                                 </div>
                             </div>
 
                             <!-- Select Basic -->
                             <div class="form-group">
-                                <label class="col-md-4 control-label" for="selectbasic">Adres Dostawy</label>
+                                <label class="col-md-4 control-label" for="selectbasic">Typ Użytkownika</label>
                                 <div class="col-md-4">
-                                    <select id="order_address" name="order_address" class="form-control" title="">
-                                        {% for location in locations %}
-                                            <option value="{{ location.a_id }}">{{ location.a_name }}</option>
-                                        {% endfor %}
+                                    <select id="c_roles" name="c_roles" class="form-control" title="">
+                                        <option value="ROLE_USER">Klient</option>
+                                        <option value="ROLE_ADMIN">Administrator</option>
                                     </select>
                                 </div>
-                            </div>
-
-                            <div class="container" style="margin-top:30px;">
-                                <div class="row">
-                                    <ul id="katalog">
-                                        <li><a href="#">Katalog</a>
-
-
-                                            {% macro productMacro(array) %}
-                                                {% import _self as pmacro %}
-                                                <ul>
-                                                    {% for product in array %}
-
-                                                        {% if product.product_is_active %}
-                                                            <li title="{{ product.product_desc }}">
-
-                                                                {{ product.product_name }}
-
-                                                                {% if not product.product_is_category %}
-
-                                                                    {{ (product.product_base_value/100)|number_format(2, '.', ',') }} zł / {{ product.product_base_size }}
-
-                                                                    <button id="{{ product.product_id }}" type="button"
-                                                                            onclick="add_order_item({{ product.product_id }},1)"
-                                                                            class="btn btn-xs btn-success">[ dodaj ]
-                                                                    </button>
-
-                                                                {% endif %}
-
-                                                                {% if not product.children|default([]) is empty %}
-
-                                                                    {{ pmacro.productMacro(product.children) }}
-
-                                                                {% endif %}
-                                                            </li>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </ul>
-                                            {% endmacro %}
-
-                                            {% import _self as pmacro2 %}
-                                            {{ pmacro2.productMacro(products) }}
-
-                                        </li>
-                                    </ul>
-                                    <p>
-
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <table class="table">
-                                    <thead>
-                                    <tr>
-                                        <th>LP</th>
-                                        <th class="col-md-6">Nazwa</th>
-                                        <th class="col-md-2">Cena</th>
-                                        <th class="col-md-2">Ilość</th>
-                                        <th class="col-md-2">Suma</th>
-                                        <th class="col-md-2">Akcja</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="zamowienie">
-                                    <!-- Tutaj zostanie wczytane zamówienie -->
-                                    </tbody>
-                                </table>
                             </div>
 
                         </fieldset>
@@ -247,7 +198,7 @@
 
                 </div>
                 <div class="modal-footer">
-                    <button id="order-confirm-btn" type="button" class="btn btn-primary">Zatwierdź</button>
+                    <button id="user-confirm-btn" type="button" class="btn btn-primary">Zatwierdź</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Anuluj</button>
                 </div>
             </div>
@@ -260,93 +211,26 @@
 {% block scripts %}
     <script src="{{ asset('js/treeview.js') }}"></script>
     <script>
-        $('#katalog').treed({openedClass: 'glyphicon-folder-open', closedClass: 'glyphicon-folder-close'});
 
-        $('#newuser').on('show.bs.modal', function(e) {
-            $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
-                $("#zamowienie").html(data)
+        $('#user-confirm-btn').on('click', function() {
+
+            $.post(
+                "{{ url('user_save') }}",
+                $('#user-form').serialize()
+            ).done(function(data) {
+                $('#newuser').modal('hide');
+                location.reload();
+                $('#user-form').trigger("reset");
             });
-
-            //if (!data) return e.preventDefault() // stops modal from being shown
+            
         });
-
-        $('.page-link').on('click', function() {
+                $('.page-link').on('click', function() {
             let page = $(this).data('page');
             let orderFilter = $('#order-filter');
 
             orderFilter.find('input#page').val(page);
             orderFilter.submit();
         });
-
-        $('#order-confirm-btn').on('click', function() {
-            $.post(
-                "{{ url('zamowienia_save') }}",
-                $('#order-form').serialize()
-            ).done(function(data) {
-                $('#newuser').modal('hide');
-                location.reload();
-            });
-        });
-
-        function add_order_item(i_id, i_amount) {
-            $.post("{{ url('zamowienia_add_item') }}", {
-                item_id: i_id,
-                item_count: i_amount,
-                update_record: 1
-            }).done(function(data) {
-                let amountElem = $('#item-amount-' + i_id);
-
-                if (amountElem.length > 0) {
-                    let amount = amountElem.val();
-                    amountElem.val(parseInt(amount) + i_amount);
-                    saveOrder();
-                } else {
-                    refreshItems();
-                }
-            });
-        }
-
-        function remove_order_item(i_id) {
-            $.post("{{ url('zamowienia_add_item') }}", {
-                item_id: i_id,
-                remove: i_id
-            }, function(data, status) {
-                setTimeout(function() {
-                    $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
-                        $("#zamowienie").html(data)
-                    });
-                }, 100);
-
-            });
-
-        }
-
-        $('#zamowienie').on('focusout', 'input.item-amount', saveOrder);
-
-        function saveOrder() {
-            $('button.save-item-btn').trigger('click');
-        }
-
-        function save_order_item(i_id) {
-            $.post("{{ url('zamowienia_add_item') }}", {
-                item_id: i_id,
-                item_count: $('#item-amount-' + i_id).val()
-            }).done(function(data) {
-                $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
-                    $("#zamowienie").html(data)
-                });
-            });
-        }
-
-        function refreshItems() {
-            $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
-                $("#zamowienie").html(data);
-            });
-        }
-
-        function showLoader() {
-            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
-        }
 
     </script>
 {% endblock %}
