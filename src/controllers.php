@@ -1473,12 +1473,6 @@ $app->post('/kontodane_edit_user', function (Request $request) use ($app) {
     ->bind('kontodane_edit_user')
 ;
 
-$app->get('/kontostacje', function () use ($app) {
-    return $app['twig']->render('kontostacje.html.twig', array());
-})
-    ->bind('kontostacje')
-;
-
 $app->get('/user/{id}', function ($id) use ($app) {
     $sql = "SELECT * FROM tbl_customers WHERE c_id = ?";
     $post = $app['dbs']['mysql_read']->fetchAssoc($sql, array((int) $id));
