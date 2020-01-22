@@ -1,0 +1,52 @@
+{% extends "layout.html.twig" %}
+{% set activate_error = activate_error|default('') %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="panel panel-info col-lg-10">
+        
+        <div class="panel-heading">
+            Aby rozpocząć użytkowanie serwisu podaj kod aktywacyjny.
+        </div>
+
+        {% if activate_error != '' %}
+            <div class="alert alert-danger" role="alert">
+            Kod Aktywacji Nieprawidłowy
+            </div>
+        {% endif %}
+
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>
+                Kod Aktywacji
+                </th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+<tr>
+    <form name="form_pass" id="form_pass" action="{{ app.url_generator.generate('activate')}}" method="post">
+    <th><input type="text" class="form-control" id="activation_code" name="activation_code" placeholder="Activation Code" required=""></th>
+    <th>
+        <div class="text-center">
+            <button type="submit" class="btn btn-default">
+                    Aktywuj
+            </button>
+        </div>
+    </th>
+
+    <th>
+        <th>
+
+     </th>
+
+        </th>
+    </form>
+     </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -87,7 +87,7 @@ $app->register(
                     'login_path' => '/login',
                     'check_path' => '/login_check',
                     'always_use_default_target_path' => true,
-                    'default_target_path' => '/zamowienia'
+                    'default_target_path' => '/after_login'
                 ),
                 'logout' => array('logout_path' => '/logout', 'invalidate_session' => true),
                 'users' => function () use ($app) {
