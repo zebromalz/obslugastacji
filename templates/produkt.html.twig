@@ -1,0 +1,68 @@
+<form id="product-form" class="form-horizontal">
+                        <fieldset>
+
+                            <!-- Form Name -->
+                            <legend id="form_title">Formularz Kategorii / Produktu </legend>
+
+                                                        <!-- Select Basic -->
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="selectbasic">Typ</label>
+                                <div class="col-md-4">
+                                    <select id="c_roles" name="c_roles" class="form-control" title="">
+                                        {% if product|length > 0 %}
+                                        <option value="{{ product.product_is_category|default("0") }}">{{ product.product_is_category|produkt_typ }}</option>
+                                        {% endif %}
+                                        <option value="0">Produkt</option>
+                                        <option value="1">Kategoria</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Text input-->
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="product_name">Nazwa</label>
+                                <div class="col-md-4">
+                                    <input id="product_name" value="{{ product.product_name|default("") }}" name="product_name" type="string"
+                                           placeholder="" class="form-control required="" input-md">
+                                </div>
+                            </div>
+
+                            <!-- Text input-->
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="product_dsc">Krótki Opis</label>
+                                <div class="col-md-4">
+                                    <textarea id="product_desc" name="product_desc" type="string"
+                                           placeholder="" class="form-control required="" input-md">{{ product.product_desc|default("") }}</textarea>
+                                </div>
+                            </div>
+
+                            <!-- Text input-->
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="product_base_value">Cena Produktu w groszach 100 = 1zł</label>
+                                <div class="col-md-4">
+                                    <input id="product_base_value" value="{{ product.product_base_value|default("0") }}" name="product_base_value" type="string"
+                                           placeholder="" class="form-control required="" input-md">
+                                </div>
+                            </div>
+
+                            <!-- Select Basic -->
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="product_base_size">Jednotka Miary</label>
+                                <div class="col-md-4">
+                                    <select id="c_roles" name="product_base_size" class="form-control" title="">
+                                        {% if product|length > 0 %}
+                                        <option value="{{ product.product_base_size|default("0") }}">{{ product.product_base_size|produkt_base_size }}</option>
+                                        {% endif %}
+                                        <option value="l">Litry</option>
+                                        <option value="szt">Sztuki</option>
+                                        <option value="kpl">Komplety</option>
+                                        <option value="m">Metry</option>
+                                        <option value="kg">Kilogramy</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                        </fieldset>
+                        <input type="hidden" name="product_id" value="{{ product.product_id|default("-1") }}">
+                        <input type="hidden" name="parent_id" value="{{ product_parent|default("-1") }}">
+</form>

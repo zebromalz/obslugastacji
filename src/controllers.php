@@ -367,6 +367,58 @@ $app->post('/zamowienia_show', function (Request $request) use ($app) {
     ->bind('zamowienia_show')
 ;
 
+$app->post('/product_show', function (Request $request) use ($app) {
+
+    $token = $app['security.token_storage']->getToken();
+
+    assert(null !== $token, "Sprawdzenie poprawnosci sesji uzytkownia oraz jego tokenu");
+
+    if (null !== $token) {
+        $user = $token->getUser();
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+
+        $q_user = "SELECT c_id , c_name from tbl_customers where c_email=:customer_email limit 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        #TODO: add check if if is new product or just edit of sth.
+        
+        $product_id = $request->get('product_id');
+        $product_parent = $request->get('product_parent');
+        
+        ##### ACTIONS
+        # - 0 new item
+        # - 1 edit
+        # - 2 delete
+        
+        $product_action = $request->get('action');
+
+        $q_product = "SELECT product_id , product_name , product_desc, product_base_value , product_base_size , product_is_category from tbl_products where product_id = :p_id;";
+        $q_product_items = $app['dbs']['mysql_read']->prepare($q_product);
+        $q_product_items->bindValue(':p_id', $product_id, PDO::PARAM_STR);
+        $q_product_items->execute();
+
+        $product = $q_product_items->fetchAll();
+
+        return $app['twig']->render('produkt.html.twig',
+            array(
+                'product' => $product['0'],
+                'product_parent' => $product_parent
+            ));
+    }else{
+        return "Nieoczekiwany Błąd A1790";
+    }
+
+})
+    ->bind('product_show')
+;
+
 $app->get(
     '/zamowienie/{id}/show',
     function ($id) use ($app) {
@@ -729,6 +781,111 @@ $app->get('/zamowienia', function (Request $request) use ($app) {
         return "ERROR MISSING USER ID";
     }
 })->bind('zamowienia');
+
+$app->get('/produkty', function (Request $request) use ($app) {
+    
+
+    $token = $app['security.token_storage']->getToken();
+    if (null !== $token) {
+        $isAdmin = $app['security.authorization_checker']->isGranted('ROLE_ADMIN');
+        $queryData = $request->query->all();
+        $offset = $request->query->has('offset') ? $request->query->get('offset') : 1;
+        $filter = new OrdersFilter('tbl_orders', $app['zamowienia.rows']);
+        $filter->bindFilter($queryData);
+        $filter->setPage($offset);
+
+        $user = $token->getUser();
+
+        $q_user = "SELECT c_id , c_name FROM tbl_customers WHERE c_email=:customer_email LIMIT 1;";
+
+        $q_customer = $app['dbs']['mysql_read']->prepare($q_user);
+        $q_customer->bindValue(':customer_email', $user->getUsername(), PDO::PARAM_STR);
+        $q_customer->execute();
+
+        $customer = $q_customer->fetch();
+
+        $customer_id = $customer['c_id'];
+
+        $ordersCountSql = "SELECT COUNT(1) AS cnt FROM tbl_orders";
+        $parameters = [];
+
+        if (!$isAdmin) {
+            $ordersCountSql .= ' WHERE tbl_orders.o_c_id = :customer_id';
+            $parameters = array_merge($parameters, ['customer_id' => $customer_id]);
+        }
+
+        if ($filter->getFilters()) {
+            $ordersCountSql .=  ($isAdmin ? ' WHERE ' : ' AND ') . $filter->getSql();
+        }
+
+        /** @var Connection $db */
+        $db = $app['dbs']['mysql_read'];
+        $stmt = $db->prepare($ordersCountSql);
+        $stmt->execute(array_merge($parameters, $filter->getFilterValues()));
+        $ordersCount = $stmt->fetchColumn();
+
+        $filter->setItemsCount($ordersCount);
+
+        $sql_zamowienia = "SELECT 
+          tbl_orders.o_id , 
+          tbl_orders.o_name, 
+          tbl_orders.o_datetime ,
+          tbl_orders.o_status ,
+          (SELECT tbl_customer_address.a_name FROM tbl_customer_address WHERE tbl_customer_address.a_id = o_c_id_shipto ) AS  o_shipto,
+          tbl_orders.o_c_id_shipto,
+          (SELECT CONCAT(tbl_customers.c_name, \" \" ,tbl_customers.c_surname) FROM tbl_customers WHERE tbl_customers.c_id = tbl_orders.o_c_id) AS o_customer,
+          tbl_orders.o_c_id,
+          tbl_orders.o_f_id
+          FROM tbl_orders";
+
+        if (!$isAdmin) {
+            $sql_zamowienia .= ' WHERE tbl_orders.o_c_id = :customer_id';
+        }
+
+        if ($filter->getFilters()) {
+            $sql_zamowienia .=  ($isAdmin ? ' WHERE ' : ' AND ') . $filter->getSql();
+        }
+
+        $sql_zamowienia .= $filter->getLimitSql();
+
+        /** @var \Doctrine\DBAL\Statement $q */
+        $q = $app['dbs']['mysql_read']->prepare($sql_zamowienia);
+        $q->execute(
+            array_merge(
+                $parameters,
+                $filter->getFilterValues()
+            )
+        );
+
+        $orders = $q->fetchAll();
+
+        $sql_products = "SELECT * FROM tbl_products";
+
+        $products = Helper::buildTree($app['dbs']['mysql_read']->fetchAll($sql_products));
+
+        $q_locations = "SELECT a_id , a_name FROM tbl_customer_address WHERE a_c_id=:customer_id;";
+
+        $q_locations = $app['dbs']['mysql_read']->prepare($q_locations);
+        $q_locations->bindValue(':customer_id', $customer_id, PDO::PARAM_INT);
+        $q_locations->execute();
+
+        $locations = $q_locations->fetchAll();
+
+        return $app['twig']->render(
+            'produkty.html.twig',
+            array(
+                'orders' => $orders,
+                'products' => $products,
+                'customer' => $customer_id,
+                'customer_name' => $customer['c_name'],
+                'locations' => $locations,
+                'filter' => $filter
+            )
+        );
+    } else {
+        return "ERROR MISSING USER ID";
+    }
+})->bind('produkty');
 
 $app->get('/after_login', function (Request $request) use ($app) {
     

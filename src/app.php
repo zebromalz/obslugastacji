@@ -190,8 +190,37 @@ $app['twig'] = $app->extend(
                 }
 
                 return null;
-            }));
+        }));
+        $twig->addFilter(
+            new Twig_Filter('produkt_base_size', function (String $status = null) {
+            
+                switch ($status) {
+                    case 'l':
+                        return 'Litry';
+                    case 'szt':
+                        return 'Sztuki';
+                    case 'kpl':
+                        return 'Komplety';
+                    case 'kg':
+                        return 'Kilogramy';
+                    case 'm':
+                        return 'Metry';
+                }
+                
+                return null;
 
+        }));
+        $twig->addFilter(
+            new Twig_Filter('produkt_typ', function (int $status = null) {
+                switch ($status) {
+                    case 0:
+                        return 'Produkt';
+                    case 1:
+                        return 'Kategoria';
+                }
+
+                return null;
+        }));
         return $twig;
     }
 );

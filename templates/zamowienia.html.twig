@@ -252,7 +252,7 @@
 {% block scripts %}
     <script src="{{ asset('js/treeview.js') }}"></script>
     <script>
-        $('#katalog').treed({openedClass: 'glyphicon-folder-open', closedClass: 'glyphicon-folder-close'});
+        $('#katalog').treed({openedClass: 'glyphicon-folder-open', closedClass: 'glyphicon-folder-close', unfolded: false});
 
         $('#neworder').on('show.bs.modal', function(e) {
             $.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
