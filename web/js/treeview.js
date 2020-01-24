@@ -3,6 +3,7 @@ $.fn.extend({
 
         var openedClass = 'glyphicon-minus-sign';
         var closedClass = 'glyphicon-plus-sign';
+        var unfolded = false;
 
         if (typeof o != 'undefined'){
             if (typeof o.openedClass != 'undefined'){
@@ -10,6 +11,9 @@ $.fn.extend({
             }
             if (typeof o.closedClass != 'undefined'){
                 closedClass = o.closedClass;
+            }
+            if (typeof o.unfolded != 'undefined'){
+                unfolded = o.unfolded;
             }
         };
 
@@ -27,7 +31,9 @@ $.fn.extend({
                     $(this).children().children().toggle();
                 }
             })
-            branch.children().children().toggle();
+            if(!unfolded){
+                branch.children().children().toggle();
+            }
         });
         //fire event from the dynamically added icon
         tree.find('.branch .indicator').each(function(){
@@ -45,7 +51,8 @@ $.fn.extend({
         //fire event to open branch if the li contains a button instead of text
         tree.find('.branch>button').each(function () {
             $(this).on('click', function (e) {
-                $(this).closest('li').click();
+                //Disable to allow edit create and remove buttons
+                //$(this).closest('li').click();
                 e.preventDefault();
             });
         });
