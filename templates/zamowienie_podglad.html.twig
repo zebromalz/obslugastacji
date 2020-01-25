@@ -21,7 +21,7 @@
                     <h6 class="card-subtitle mb-2 text-muted">{{ order.o_datetime }}</h6>
                     <div class="card-text">
                         {% if is_granted('ROLE_ADMIN') and possibleStatuses|length > 0 %}
-                            <form class="form-inline" action="{{ url('change_status') }}" method="post">
+                            <form class="form-inline" action="{{ url('change_status_zamowienie') }}" method="post">
                                 <div class="form-group mb-2">
                                     Akcje:
                                 </div>

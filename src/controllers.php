@@ -547,7 +547,7 @@ $app->post(
             return new Response("Access Denied", Response::HTTP_FORBIDDEN);
         }
     }
-)->bind('change_status');
+)->bind('change_status_zamowienie');
 
 $app->post(
     'uzytkownik/status',
