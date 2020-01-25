@@ -8,7 +8,7 @@
                             <div class="form-group">
                                 <label class="col-md-4 control-label" for="selectbasic">Typ</label>
                                 <div class="col-md-4">
-                                    <select id="c_roles" name="c_roles" class="form-control" title="">
+                                    <select id="product_is_category" name="product_is_category" class="form-control" title="">
                                         {% if product|length > 0 %}
                                         <option value="{{ product.product_is_category|default("0") }}">{{ product.product_is_category|produkt_typ }}</option>
                                         {% endif %}
@@ -49,7 +49,7 @@
                             <div class="form-group">
                                 <label class="col-md-4 control-label" for="product_base_size">Jednotka Miary</label>
                                 <div class="col-md-4">
-                                    <select id="c_roles" name="product_base_size" class="form-control" title="">
+                                    <select id="c_product_base_size" name="product_base_size" class="form-control" title="">
                                         {% if product|length > 0 %}
                                         <option value="{{ product.product_base_size|default("0") }}">{{ product.product_base_size|produkt_base_size }}</option>
                                         {% endif %}
@@ -65,4 +65,6 @@
                         </fieldset>
                         <input type="hidden" name="product_id" value="{{ product.product_id|default("-1") }}">
                         <input type="hidden" name="parent_id" value="{{ product_parent|default("-1") }}">
+                        <input type="hidden" name="product_action" value="{{ product_action|default("-1") }}">
+                        <input type="hidden" name="product_action_source" value="1">
 </form>

@@ -9,10 +9,13 @@
         
         <div class="container" style="margin-top:30px;">
                                 <div class="row">
+                                    <div hidden id="error_msg" class="alert alert-danger" role="alert">
+                                        Ta kategoria posiada podkategorie/produkty i nie można jej usunąć.
+                                    </div>
                                     <ul id="katalog">
                                         <li><a href="#">Katalog</a> 
-                                        <button id="0" href="#product" type="button" 
-                                                class="btn btn-xs btn-warning" data-toggle="modal">[ Nowa Kategoria ]
+                                        <button id="createcategory" href="#product" type="button" 
+                                                class="btn btn-xs btn-warning" data-toggle="modal" onclick="edit_item(0,0,1,0)">[ Nowa Kategoria ]
                                         </button>
 
                                             {% macro productMacro(array) %}
@@ -21,33 +24,47 @@
                                                     {% for product in array %}
 
                                                         {% if product.product_is_active %}
-                                                            <li title="{{ product.product_desc }}">
+                                                            <li id="product_{{ product.product_id }}" title="{{ product.product_desc }}">
 
                                                                 {{ product.product_name }}
 
                                                                 {% if not product.product_is_category %}
 
-                                                                    {{ (product.product_base_value/100)|number_format(2, '.', ',') }} zł / {{ product.product_base_size }}
+                                                                    {{ (product.product_base_value/100)|number_format(2, '.', ',') }} zł
 
-                                                                    <button id="{{ product.product_id }}" type="button"
-                                                                            onclick="edit_item({{ product.product_id }},1)"
-                                                                            class="btn btn-xs btn-success">[ edytuj ]
+                                                                    <button type="button"
+                                                                            onclick="edit_item({{ product.product_id }},1,{{ product.product_is_category }},{{ product.childrencount }})"
+                                                                            class="btn btn-xs btn-success" href="#product" data-toggle="modal">[ edytuj ]
                                                                     </button>
-                                                                    <button id="{{ product.product_id }}" type="button"
-                                                                            onclick="edit_item({{ product.product_id }},1)"
+                                                                    {% if product.childrencount == 0 %}
+                                                                    <button type="button"
+                                                                            onclick="edit_item({{ product.product_id }},2,{{ product.product_is_category }},{{ product.childrencount }})"
                                                                             class="btn btn-xs btn-danger">[ usuń ]
                                                                     </button>
+                                                                    {% endif %}
                                                                 {% else %}
 
-                                                                    <button id="{{ product.product_id }}" type="button"
-                                                                            onclick="add_item({{ product.product_id }},1)"
-                                                                            class="btn btn-xs btn-warning">[ Nowa SubKategoria ]
+                                                                    <button type="button"
+                                                                            onclick="edit_item({{ product.product_id }},0,1,{{ product.childrencount }})"
+                                                                            class="btn btn-xs btn-warning" href="#product" data-toggle="modal">[ Nowa SubKategoria ]
                                                                     </button>
 
-                                                                    <button id="{{ product.product_id }}" type="button"
-                                                                            onclick="add_item({{ product.product_id }},1)"
-                                                                            class="btn btn-xs btn-success">[ Nowy Produkt ]
+                                                                    <button type="button"
+                                                                            onclick="edit_item({{ product.product_id }},0,0,{{ product.childrencount }})"
+                                                                            class="btn btn-xs btn-success" href="#product" data-toggle="modal">[ Nowy Produkt ]
                                                                     </button>
+
+                                                                    <button type="button"
+                                                                            onclick="edit_item({{ product.product_id }},1,{{ product.product_is_category }},{{ product.childrencount }})"
+                                                                            class="btn btn-xs btn-success" href="#product" data-toggle="modal">[ edytuj ]
+                                                                    </button>
+                                                                    
+                                                                    {% if product.childrencount == 0 %}
+                                                                    <button type="button"
+                                                                            onclick="edit_item({{ product.product_id }},2,{{ product.product_is_category }},{{ product.childrencount }})"
+                                                                            class="btn btn-xs btn-danger">[ usuń ]
+                                                                    </button>
+                                                                    {% endif %}
 
                                                                 {% endif %}
 
@@ -107,19 +124,57 @@
         $('#katalog').treed({openedClass: 'glyphicon-folder-open', closedClass: 'glyphicon-folder-close', unfolded: true});
 
         $('#product').on('show.bs.modal', function(e) {
-            $.post("{{ url('product_show') }}", {}, function(data, status) {
-                $("#product_form").html(data);
-            });
-
+            showLoader();
+            //$.post("{{ url('product_show') }}", {}, function(data, status) {
+            //    $("#product_form").html(data);
+            //    console.log("reload of modal")
+            //});
             //if (!data) return e.preventDefault() // stops modal from being shown
         });
 
-        $('#order-confirm-btn').on('click', function() {
+        function edit_item(i_id,i_action,i_is_category,i_childrencount) {
+            if(i_childrencount > 0 && i_action == 2){
+                $("#error_msg").show();
+            }else{
+                showLoader();
+                if(i_action != 2){
+                    $("#product").show();
+                }
+                $.post("{{ url('product_show') }}", {
+                    product_id: i_id,
+                    product_action: i_action,
+                    product_type: i_is_category,
+                    product_childrencount: i_childrencount
+                }, function(data, status) {
+                    setTimeout(function() {
+                        if(status == 'success'){
+                            if(i_action == 2 ){
+                                $("#product_"+i_id).remove();
+                                location.reload();
+                            }else{
+                                $("#product_form").html(data);
+                                console.log("html injectl")
+                            }
+                            
+                        }else{
+                            //Fail
+                        }
+                        //$.post("{{ url('zamowienia_show') }}", {}, function(data, status) {
+                        //    $("#zamowienie").html(data)
+                        //});
+                    }, 100);
+
+                });
+            }
+
+        }
+
+        $('#user-confirm-btn').on('click', function() {
             $.post(
                 "{{ url('product_show') }}",
-                $('#order-form').serialize()
+                $('#product-form').serialize()
             ).done(function(data) {
-                $('#neworder').modal('hide');
+                $('#product').modal('hide');
                 location.reload();
             });
         });
@@ -152,7 +207,7 @@
             });
         }
 
-        function remove_order_item(i_id) {
+        function remove_item(i_id) {
             $.post("{{ url('zamowienia_add_item') }}", {
                 item_id: i_id,
                 remove: i_id
@@ -191,7 +246,7 @@
         }
 
         function showLoader() {
-            $("#zamowienie").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
+            $("#product_form").html('<tr><td colspan=6><center><img src="{{ asset('assets/img/loading.gif') }}"></center></td></tr> ');
         }
 
     </script>

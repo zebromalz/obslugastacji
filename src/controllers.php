@@ -390,26 +390,72 @@ $app->post('/product_show', function (Request $request) use ($app) {
         #TODO: add check if if is new product or just edit of sth.
         
         $product_id = $request->get('product_id');
-        $product_parent = $request->get('product_parent');
+        $product_type = $request->get('product_type');
         
         ##### ACTIONS
         # - 0 new item
         # - 1 edit
         # - 2 delete
         
-        $product_action = $request->get('action');
+        $product_action = $request->get('product_action');
+        if(is_null($product_action)){
+            $product_action = 0; #new item
+        }
+        
+        if($product_action != 0){
+            $q_product = "SELECT product_id , product_name , product_desc, product_base_value , product_base_size , product_is_category , product_parent , (SELECT count(1) from tbl_products tp  where tp.product_parent = products.product_id) as children from tbl_products products where product_id = :p_id;";
+            $q_product_items = $app['dbs']['mysql_read']->prepare($q_product);
+            $q_product_items->bindValue(':p_id', $product_id, PDO::PARAM_STR);
+            $q_product_items->execute();
 
-        $q_product = "SELECT product_id , product_name , product_desc, product_base_value , product_base_size , product_is_category from tbl_products where product_id = :p_id;";
-        $q_product_items = $app['dbs']['mysql_read']->prepare($q_product);
-        $q_product_items->bindValue(':p_id', $product_id, PDO::PARAM_STR);
-        $q_product_items->execute();
+            $product = $q_product_items->fetchAll();
 
-        $product = $q_product_items->fetchAll();
+        }elseif( $product_action == 0 ){
+            $product_parent = $product_id;
+        }
+        #Delete product
+        if ($product_action == 2) {
+
+            $q_product_del = "update tbl_products set product_is_active = 0 where product_id = :p_id;";
+            $q_product_del_item = $app['dbs']['mysql_read']->prepare($q_product_del);
+            $q_product_del_item->bindValue(':p_id', $product_id, PDO::PARAM_STR);
+            $q_product_del_item->execute();
+
+        }
+
+        if ($product_action == 1 && $request->get('product_action_source') == 1){
+            $q_product_update = "update tbl_products set 
+                                    product_is_category=:product_is_category,
+                                    product_name=:product_name,
+                                    product_desc=:product_desc,
+                                    product_base_value=:product_base_value,
+                                    product_base_size=:product_base_size
+                                 where product_id=:product_id ;";
+            $q_product_update_item = $app['dbs']['mysql_read']->prepare($q_product_update);
+            $q_product_update_item->bindValue(':product_id', $request->get('product_id'), PDO::PARAM_STR);
+            $q_product_update_item->bindValue(':product_is_category', $request->get('product_is_category'), PDO::PARAM_STR);
+            $q_product_update_item->bindValue(':product_name', $request->get('product_name'), PDO::PARAM_STR);
+            $q_product_update_item->bindValue(':product_desc', $request->get('product_desc'), PDO::PARAM_STR);
+            $q_product_update_item->bindValue(':product_base_value', $request->get('product_base_value'), PDO::PARAM_STR);
+            $q_product_update_item->bindValue(':product_base_size', $request->get('product_base_size'), PDO::PARAM_STR);
+            $q_product_update_item->execute();
+        }elseif($product_id == -1 && $product_action == 0){
+            $q_product_add = "insert into tbl_products values (null,:product_parent,:product_is_category,:product_name,:product_desc,1,current_timestamp(),:product_base_value,:product_base_size);";
+            $q_product_add_item = $app['dbs']['mysql_read']->prepare($q_product_add);
+            $q_product_add_item->bindValue(':product_parent', $request->get('parent_id'), PDO::PARAM_STR);
+            $q_product_add_item->bindValue(':product_is_category', $request->get('product_is_category'), PDO::PARAM_STR);
+            $q_product_add_item->bindValue(':product_name', $request->get('product_name'), PDO::PARAM_STR);
+            $q_product_add_item->bindValue(':product_desc', $request->get('product_desc'), PDO::PARAM_STR);
+            $q_product_add_item->bindValue(':product_base_value', $request->get('product_base_value'), PDO::PARAM_STR);
+            $q_product_add_item->bindValue(':product_base_size', $request->get('product_base_size'), PDO::PARAM_STR);
+            $q_product_add_item->execute();
+        }
 
         return $app['twig']->render('produkt.html.twig',
             array(
                 'product' => $product['0'],
-                'product_parent' => $product_parent
+                'product_action' => $product_action,
+                'product_parent' => $product_parent 
             ));
     }else{
         return "Nieoczekiwany Błąd A1790";
@@ -754,7 +800,7 @@ $app->get('/zamowienia', function (Request $request) use ($app) {
 
         $orders = $q->fetchAll();
 
-        $sql_products = "SELECT * FROM tbl_products";
+        $sql_products = "SELECT * , (SELECT count(1) from tbl_products tp  where tp.product_parent = products.product_id) as childrencount from tbl_products products";
 
         $products = Helper::buildTree($app['dbs']['mysql_read']->fetchAll($sql_products));
 
@@ -859,7 +905,7 @@ $app->get('/produkty', function (Request $request) use ($app) {
 
         $orders = $q->fetchAll();
 
-        $sql_products = "SELECT * FROM tbl_products";
+        $sql_products = "SELECT * , (SELECT count(1) from tbl_products tp  where tp.product_parent = products.product_id) as childrencount from tbl_products products";
 
         $products = Helper::buildTree($app['dbs']['mysql_read']->fetchAll($sql_products));
 
