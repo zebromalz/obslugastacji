@@ -424,21 +424,26 @@ $app->post('/product_show', function (Request $request) use ($app) {
         }
 
         if ($product_action == 1 && $request->get('product_action_source') == 1){
-            $q_product_update = "update tbl_products set 
+            try {
+                $q_product_update = "update tbl_products set 
                                     product_is_category=:product_is_category,
                                     product_name=:product_name,
                                     product_desc=:product_desc,
                                     product_base_value=:product_base_value,
                                     product_base_size=:product_base_size
                                  where product_id=:product_id ;";
-            $q_product_update_item = $app['dbs']['mysql_read']->prepare($q_product_update);
-            $q_product_update_item->bindValue(':product_id', $request->get('product_id'), PDO::PARAM_STR);
-            $q_product_update_item->bindValue(':product_is_category', $request->get('product_is_category'), PDO::PARAM_STR);
-            $q_product_update_item->bindValue(':product_name', $request->get('product_name'), PDO::PARAM_STR);
-            $q_product_update_item->bindValue(':product_desc', $request->get('product_desc'), PDO::PARAM_STR);
-            $q_product_update_item->bindValue(':product_base_value', $request->get('product_base_value'), PDO::PARAM_STR);
-            $q_product_update_item->bindValue(':product_base_size', $request->get('product_base_size'), PDO::PARAM_STR);
-            $q_product_update_item->execute();
+                $q_product_update_item = $app['dbs']['mysql_read']->prepare($q_product_update);
+                $q_product_update_item->bindValue(':product_id', $request->get('product_id'), PDO::PARAM_STR);
+                $q_product_update_item->bindValue(':product_is_category', $request->get('product_is_category'), PDO::PARAM_STR);
+                $q_product_update_item->bindValue(':product_name', $request->get('product_name'), PDO::PARAM_STR);
+                $q_product_update_item->bindValue(':product_desc', $request->get('product_desc'), PDO::PARAM_STR);
+                $q_product_update_item->bindValue(':product_base_value', $request->get('product_base_value'), PDO::PARAM_STR);
+                $q_product_update_item->bindValue(':product_base_size', $request->get('product_base_size'), PDO::PARAM_STR);
+                $q_product_update_item->execute();
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage());
+            }
+
         }elseif($product_id == -1 && $product_action == 0){
             $q_product_add = "insert into tbl_products values (null,:product_parent,:product_is_category,:product_name,:product_desc,1,current_timestamp(),:product_base_value,:product_base_size);";
             $q_product_add_item = $app['dbs']['mysql_read']->prepare($q_product_add);
